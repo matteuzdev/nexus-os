@@ -142,10 +142,14 @@ export class SalesViewComponent {
       this.dataService.addLead({
         company,
         contact: 'Novo Contato',
+        email: '',
+        phone: '',
         value: 0,
         status: 'Lead',
         source: 'Manual',
         investigation: {
+          industry: '',
+          companySize: '1-10',
           painPoints: '',
           techStack: '',
           budgetRange: '',
