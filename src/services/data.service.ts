@@ -5,6 +5,7 @@ export type TaskStatus = 'Backlog' | 'A Fazer' | 'Em Progresso' | 'Revisão' | '
 export type TicketPriority = 'Baixa' | 'Média' | 'Alta' | 'Crítica';
 export type TicketStatus = 'Aberto' | 'Em Análise' | 'Aguardando Dev' | 'Resolvido';
 export type LeadStatus = 'Lead' | 'Qualificado' | 'Proposta' | 'Negociação' | 'Fechado' | 'Perdido';
+export type SquadType = 'Growth' | 'Delivery' | 'Estratégia';
 
 export interface Product {
   id: string;
@@ -49,6 +50,33 @@ export interface Lead {
   lastContact: Date;
 }
 
+export interface Member {
+  id: string;
+  name: string;
+  role: string;
+  avatar: string;
+  status: 'Online' | 'Offline' | 'Busy';
+  lastActivity: string;
+}
+
+export interface Squad {
+  id: string;
+  name: string;
+  type: SquadType;
+  members: Member[];
+  kpi: string;
+  healthScore: number;
+}
+
+export interface Message {
+  id: string;
+  senderId: string;
+  senderName: string;
+  content: string;
+  timestamp: Date;
+  isPrivate: boolean; // True if only for Orion & CEO
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -79,12 +107,43 @@ export class DataService {
     { id: 'l4', company: 'Indústria Prime', contact: 'Roberto', value: 25000, status: 'Fechado', source: 'Evento', lastContact: new Date() },
   ]);
 
+  squads = signal<Squad[]>(this.load('squads') || [
+    {
+      id: 's1',
+      name: 'Squad Growth',
+      type: 'Growth',
+      kpi: 'Conversão de Leads',
+      healthScore: 92,
+      members: [
+        { id: 'm1', name: 'Ana SDR', role: 'Closer', avatar: 'AS', status: 'Online', lastActivity: 'Moveu Lead "Startup X" para Negociação' },
+        { id: 'm2', name: 'Lucas CS', role: 'Account Manager', avatar: 'LC', status: 'Busy', lastActivity: 'Reunião de Onboarding com "Indústria Prime"' }
+      ]
+    },
+    {
+      id: 's2',
+      name: 'Squad Delivery',
+      type: 'Delivery',
+      kpi: 'Sprint Velocity',
+      healthScore: 88,
+      members: [
+        { id: 'm3', name: 'Orion (AI)', role: 'Dev Fullstack', avatar: 'O', status: 'Online', lastActivity: 'Implementando Nexus Chat Hub' },
+        { id: 'm4', name: 'Carla QA', role: 'Quality Assurance', avatar: 'CQ', status: 'Offline', lastActivity: 'Validou Story #402' }
+      ]
+    }
+  ]);
+
+  messages = signal<Message[]>(this.load('messages') || [
+    { id: 'msg1', senderId: 'm3', senderName: 'Orion', content: '👑 Bem-vindo ao Nexus Hub, Matteuz. O sistema está operando a 100% de eficiência.', timestamp: new Date(), isPrivate: true }
+  ]);
+
   constructor() {
     // Auto-sync to LocalStorage
     effect(() => this.save('products', this.products()));
     effect(() => this.save('tasks', this.tasks()));
     effect(() => this.save('tickets', this.tickets()));
     effect(() => this.save('leads', this.leads()));
+    effect(() => this.save('squads', this.squads()));
+    effect(() => this.save('messages', this.messages()));
   }
 
   private save(key: string, data: any) {
@@ -93,7 +152,15 @@ export class DataService {
 
   private load(key: string): any {
     const data = localStorage.getItem(`nexus_${key}`);
-    return data ? JSON.parse(data) : null;
+    if (!data) return null;
+    try {
+      const parsed = JSON.parse(data);
+      // Fix dates
+      if (key === 'messages') {
+        return parsed.map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) }));
+      }
+      return parsed;
+    } catch { return null; }
   }
 
   // --- COMPUTED ---
@@ -104,6 +171,19 @@ export class DataService {
     .filter(l => l.status !== 'Fechado' && l.status !== 'Perdido')
     .reduce((acc, l) => acc + l.value, 0)
   );
+
+  // --- ACTIONS: CHAT ---
+  sendMessage(content: string, isPrivate: boolean = false) {
+    const newMessage: Message = {
+      id: 'msg' + Date.now(),
+      senderId: isPrivate ? 'ceo' : 'm3', // Mocking CEO/Orion
+      senderName: isPrivate ? 'Matteuz (CEO)' : 'Orion',
+      content,
+      timestamp: new Date(),
+      isPrivate
+    };
+    this.messages.update(prev => [...prev, newMessage]);
+  }
 
   // --- ACTIONS: TASKS ---
   moveTask(taskId: string, newStatus: TaskStatus) {

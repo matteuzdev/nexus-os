@@ -6,8 +6,9 @@ import { KanbanViewComponent } from './components/kanban-view.component';
 import { SupportViewComponent } from './components/support-view.component';
 import { PublicWebsiteComponent } from './components/public-website.component';
 import { SalesViewComponent } from './components/sales-view.component';
+import { SquadsViewComponent } from './components/squads-view.component';
 
-type View = 'public' | 'dashboard' | 'portfolio' | 'kanban' | 'support' | 'sales';
+type View = 'public' | 'dashboard' | 'portfolio' | 'kanban' | 'support' | 'sales' | 'squads';
 
 @Component({
   selector: 'app-root',
@@ -19,7 +20,8 @@ type View = 'public' | 'dashboard' | 'portfolio' | 'kanban' | 'support' | 'sales
     KanbanViewComponent, 
     SupportViewComponent,
     PublicWebsiteComponent,
-    SalesViewComponent
+    SalesViewComponent,
+    SquadsViewComponent
   ],
   template: `
     @if (currentView() === 'public') {
@@ -56,11 +58,11 @@ type View = 'public' | 'dashboard' | 'portfolio' | 'kanban' | 'support' | 'sales
               Vendas / CRM
             </button>
 
-            <button (click)="currentView.set('portfolio')" 
+            <button (click)="currentView.set('squads')" 
               class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all"
-              [class]="currentView() === 'portfolio' ? 'bg-zinc-800 text-white shadow-inner' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'">
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
-              Portfólio & Produtos
+              [class]="currentView() === 'squads' ? 'bg-zinc-800 text-white shadow-inner' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+              Squads & Chat
             </button>
 
             <button (click)="currentView.set('kanban')" 
@@ -75,6 +77,13 @@ type View = 'public' | 'dashboard' | 'portfolio' | 'kanban' | 'support' | 'sales
               [class]="currentView() === 'support' ? 'bg-zinc-800 text-white shadow-inner' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
               Suporte & Chamados
+            </button>
+
+            <button (click)="currentView.set('portfolio')" 
+              class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all"
+              [class]="currentView() === 'portfolio' ? 'bg-zinc-800 text-white shadow-inner' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+              Portfólio
             </button>
           </nav>
 
@@ -102,7 +111,8 @@ type View = 'public' | 'dashboard' | 'portfolio' | 'kanban' | 'support' | 'sales
               @switch (currentView()) {
                 @case ('dashboard') { Visão Geral }
                 @case ('sales') { Funil de Vendas & CRM }
-                @case ('portfolio') { Portfólio }
+                @case ('squads') { Gestão de Squads & Nexus Hub }
+                @case ('portfolio') { Portfólio de Produtos }
                 @case ('kanban') { Board de Desenvolvimento }
                 @case ('support') { Central de Suporte }
               }
@@ -123,6 +133,7 @@ type View = 'public' | 'dashboard' | 'portfolio' | 'kanban' | 'support' | 'sales
             @switch (currentView()) {
               @case ('dashboard') { <app-dashboard-view class="animate-in fade-in slide-in-from-bottom-2 duration-500"/> }
               @case ('sales') { <app-sales-view class="h-full block animate-in fade-in slide-in-from-bottom-2 duration-500"/> }
+              @case ('squads') { <app-squads-view class="h-full block animate-in fade-in slide-in-from-bottom-2 duration-500"/> }
               @case ('portfolio') { <app-portfolio-view class="animate-in fade-in slide-in-from-bottom-2 duration-500"/> }
               @case ('kanban') { <app-kanban-view class="h-full block animate-in fade-in slide-in-from-bottom-2 duration-500"/> }
               @case ('support') { <app-support-view class="h-full block animate-in fade-in slide-in-from-bottom-2 duration-500"/> }
