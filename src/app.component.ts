@@ -104,9 +104,9 @@ type View = 'public' | 'dashboard' | 'portfolio' | 'kanban' | 'support' | 'sales
         </aside>
 
         <!-- Content Area -->
-        <main class="flex-1 overflow-hidden flex flex-col bg-zinc-950 relative">
+        <main class="flex-1 overflow-y-auto bg-zinc-950 relative custom-scrollbar flex flex-col">
           <!-- Top Bar -->
-          <header class="h-16 border-b border-zinc-800 flex items-center justify-between px-8 shrink-0 bg-zinc-950/50 backdrop-blur-sm z-10">
+          <header class="h-16 border-b border-zinc-800 flex items-center justify-between px-8 shrink-0 bg-zinc-950/80 backdrop-blur-md sticky top-0 z-20">
             <h2 class="text-xl font-semibold text-white tracking-tight">
               @switch (currentView()) {
                 @case ('dashboard') { Visão Geral }
@@ -129,14 +129,14 @@ type View = 'public' | 'dashboard' | 'portfolio' | 'kanban' | 'support' | 'sales
           </header>
 
           <!-- Views -->
-          <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
+          <div class="flex-1 p-8">
             @switch (currentView()) {
               @case ('dashboard') { <app-dashboard-view class="animate-in fade-in slide-in-from-bottom-2 duration-500"/> }
-              @case ('sales') { <app-sales-view class="h-full block animate-in fade-in slide-in-from-bottom-2 duration-500"/> }
-              @case ('squads') { <app-squads-view class="h-full block animate-in fade-in slide-in-from-bottom-2 duration-500"/> }
+              @case ('sales') { <app-sales-view class="animate-in fade-in slide-in-from-bottom-2 duration-500"/> }
+              @case ('squads') { <app-squads-view class="animate-in fade-in slide-in-from-bottom-2 duration-500"/> }
               @case ('portfolio') { <app-portfolio-view class="animate-in fade-in slide-in-from-bottom-2 duration-500"/> }
-              @case ('kanban') { <app-kanban-view class="h-full block animate-in fade-in slide-in-from-bottom-2 duration-500"/> }
-              @case ('support') { <app-support-view class="h-full block animate-in fade-in slide-in-from-bottom-2 duration-500"/> }
+              @case ('kanban') { <app-kanban-view class="animate-in fade-in slide-in-from-bottom-2 duration-500"/> }
+              @case ('support') { <app-support-view class="animate-in fade-in slide-in-from-bottom-2 duration-500"/> }
             }
           </div>
         </main>
