@@ -85,6 +85,7 @@ export class DashboardViewComponent {
     if (title) {
       this.dataService.addTask({
         title,
+        description: '',
         type: 'Feature',
         points: 1,
         status: 'Backlog',
