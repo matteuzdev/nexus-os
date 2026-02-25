@@ -47,6 +47,7 @@ export interface Ticket {
   linkedProductId: string;
   linkedTaskId?: string;
   createdAt: Date;
+  reproductionSteps?: string; // Filled by QA
 }
 
 export interface Lead {
