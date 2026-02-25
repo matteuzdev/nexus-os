@@ -44,12 +44,18 @@ import { DataService, Member, Squad, Message } from '../services/data.service';
                         [class.bg-amber-500]="member.status === 'Busy'"></div>
                     </div>
                     <div class="flex-1 min-w-0">
-                      <div class="flex items-center justify-between">
+                      <div class="flex items-center justify-between mb-1">
                         <span class="text-sm font-bold text-white truncate">{{ member.name }}</span>
-                        <span class="text-[9px] font-black text-zinc-600 uppercase">{{ member.role }}</span>
+                        <span class="text-[9px] font-black text-indigo-500 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20">Lvl {{ member.level || 1 }}</span>
                       </div>
-                      <p class="text-[10px] text-zinc-500 truncate mt-1">
-                        <span class="text-indigo-500/50 font-bold uppercase text-[8px]">Atividade:</span> {{ member.lastActivity }}
+                      
+                      <!-- XP Bar -->
+                      <div class="w-full bg-zinc-800 rounded-full h-1.5 mb-2 overflow-hidden">
+                        <div class="bg-indigo-500 h-1.5 rounded-full transition-all duration-1000" [style.width]="((member.xp || 0) / ((member.level || 1) * 1000) * 100) + '%'"></div>
+                      </div>
+
+                      <p class="text-[10px] text-zinc-500 truncate">
+                        <span class="text-emerald-500/70 font-bold uppercase text-[8px]">Última Atividade:</span> {{ member.lastActivity }}
                       </p>
                     </div>
                   </div>
@@ -132,29 +138,40 @@ export class SquadsViewComponent {
     
     const isPrivate = this.chatMode() === 'private';
     const sender = 'Matteuz (CEO)';
+    const text = this.newMessage;
     
-    this.dataService.sendMessage(this.newMessage, sender, isPrivate);
+    this.dataService.sendMessage(text, sender, isPrivate);
+    this.newMessage = '';
     
-    // Squad Interactions in "Geral"
     if (!isPrivate) {
-      this.simulateSquadReply();
+      this.simulateSquadReply(text);
     } else {
       this.simulateOrionPrivateReply();
     }
-
-    this.newMessage = '';
   }
 
-  simulateSquadReply() {
-    const replies = [
-      { name: 'Ana SDR', msg: 'Lead qualificado e dossiê atualizado, Matteuz!' },
-      { name: 'Carla QA', msg: 'Story #402 está em homologação. Tudo ok até agora.' },
-      { name: 'Orion', msg: 'Sincronizando tarefas com o Kanban do Delivery.' }
-    ];
-    const random = replies[Math.floor(Math.random() * replies.length)];
+  simulateSquadReply(message: string) {
+    const text = message.toLowerCase();
+    
     setTimeout(() => {
-      this.dataService.sendMessage(random.msg, random.name, false);
-    }, 1500);
+      if (text.includes('@ana') || text.includes('vendas') || text.includes('sdr')) {
+        this.dataService.sendMessage('Estou em cima disso, Matteuz! Prospecção a todo vapor.', 'Ana SDR', false);
+        this.dataService.addXP('m1', 10);
+      } else if (text.includes('@carla') || text.includes('qa') || text.includes('bug') || text.includes('suporte')) {
+        this.dataService.sendMessage('Testes a postos. Me passa o card que eu destruo os bugs 🐛.', 'Carla QA', false);
+        this.dataService.addXP('m4', 10);
+      } else if (text.includes('@orion') || text.includes('dev') || text.includes('codigo')) {
+        this.dataService.sendMessage('Sistemas estáveis e repositórios sincronizados. O código está cantando.', 'Orion', false);
+      } else {
+        const replies = [
+          { name: 'Ana SDR', msg: 'Anotado, chefe!' },
+          { name: 'Carla QA', msg: 'Monitorando por aqui.' },
+          { name: 'Lucas CS', msg: 'CS a postos, precisando é só chamar.' }
+        ];
+        const random = replies[Math.floor(Math.random() * replies.length)];
+        this.dataService.sendMessage(random.msg, random.name, false);
+      }
+    }, 1200);
   }
 
   simulateOrionPrivateReply() {

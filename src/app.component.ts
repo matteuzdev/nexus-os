@@ -7,8 +7,10 @@ import { SupportViewComponent } from './components/support-view.component';
 import { PublicWebsiteComponent } from './components/public-website.component';
 import { SalesViewComponent } from './components/sales-view.component';
 import { SquadsViewComponent } from './components/squads-view.component';
+import { PersonalViewComponent } from './components/personal-view.component';
+import { PublicSupportComponent } from './components/public-support.component';
 
-type View = 'public' | 'dashboard' | 'portfolio' | 'kanban' | 'support' | 'sales' | 'squads';
+type View = 'public' | 'public-support' | 'dashboard' | 'portfolio' | 'kanban' | 'support' | 'sales' | 'squads' | 'personal';
 
 @Component({
   selector: 'app-root',
@@ -21,12 +23,18 @@ type View = 'public' | 'dashboard' | 'portfolio' | 'kanban' | 'support' | 'sales
     SupportViewComponent,
     PublicWebsiteComponent,
     SalesViewComponent,
-    SquadsViewComponent
+    SquadsViewComponent,
+    PersonalViewComponent,
+    PublicSupportComponent
   ],
   template: `
     @if (currentView() === 'public') {
       <div class="h-screen overflow-y-auto custom-scrollbar bg-zinc-950">
-        <app-public-website (login)="currentView.set('dashboard')"></app-public-website>
+        <app-public-website (login)="currentView.set('dashboard')" (support)="currentView.set('public-support')"></app-public-website>
+      </div>
+    } @else if (currentView() === 'public-support') {
+      <div class="h-screen overflow-y-auto custom-scrollbar bg-zinc-950">
+        <app-public-support (back)="currentView.set('public')"></app-public-support>
       </div>
     } @else {
       <div class="flex h-screen bg-zinc-950 text-white font-sans selection:bg-indigo-500/30 overflow-hidden">
@@ -46,6 +54,14 @@ type View = 'public' | 'dashboard' | 'portfolio' | 'kanban' | 'support' | 'sales
 
           <!-- Navigation -->
           <nav class="flex-1 px-3 space-y-1 mt-4 overflow-y-auto custom-scrollbar">
+            
+            <button (click)="currentView.set('personal')" 
+              class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold transition-all mb-4 border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.05)]"
+              [class]="currentView() === 'personal' ? 'bg-emerald-600/10 text-emerald-400 border-emerald-500/50' : 'text-emerald-500/70 hover:text-emerald-400 hover:bg-emerald-600/5'">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+              My Focus Space
+            </button>
+
             <button (click)="currentView.set('dashboard')" 
               class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all"
               [class]="currentView() === 'dashboard' ? 'bg-zinc-800 text-white shadow-inner' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'">
@@ -64,7 +80,7 @@ type View = 'public' | 'dashboard' | 'portfolio' | 'kanban' | 'support' | 'sales
               class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all"
               [class]="currentView() === 'squads' ? 'bg-zinc-800 text-white shadow-inner' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-              Squads & Chat
+              Squads & Gestão
             </button>
 
             <button (click)="currentView.set('kanban')" 
@@ -92,31 +108,32 @@ type View = 'public' | 'dashboard' | 'portfolio' | 'kanban' | 'support' | 'sales
           <!-- User Profile & Exit -->
           <div class="p-4 border-t border-zinc-800 space-y-4">
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700"></div>
+              <div class="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center font-bold text-xs">M</div>
               <div class="flex flex-col">
-                <span class="text-xs font-bold text-white">Admin</span>
-                <span class="text-[10px] text-zinc-500">nexus@owner.com</span>
+                <span class="text-xs font-bold text-white">Matteuz</span>
+                <span class="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">CEO</span>
               </div>
             </div>
-            <button (click)="currentView.set('public')" class="w-full text-xs text-zinc-500 hover:text-zinc-300 py-2 border border-zinc-800 hover:bg-zinc-800 rounded transition-colors flex items-center justify-center gap-2">
+            <button (click)="currentView.set('public')" class="w-full text-[10px] uppercase font-bold text-zinc-500 hover:text-zinc-300 py-2 border border-zinc-800 hover:bg-zinc-800 rounded transition-colors flex items-center justify-center gap-2">
               <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-              Sair / Ir para Site
+              Sair / Landing Page
             </button>
           </div>
         </aside>
 
         <!-- Content Area -->
-        <main class="flex-1 overflow-hidden bg-zinc-950 relative flex flex-col">
+        <main class="flex-1 overflow-y-auto bg-zinc-950 relative custom-scrollbar flex flex-col">
           <!-- Top Bar -->
           <header class="h-16 border-b border-zinc-800 flex items-center justify-between px-8 shrink-0 bg-zinc-950/80 backdrop-blur-md sticky top-0 z-20">
             <h2 class="text-xl font-semibold text-white tracking-tight">
               @switch (currentView()) {
+                @case ('personal') { <span class="text-emerald-400">My Focus Space</span> }
                 @case ('dashboard') { Visão Geral }
                 @case ('sales') { Funil de Vendas & CRM }
-                @case ('squads') { Gestão de Squads & Nexus Hub }
+                @case ('squads') { Squads & Gestão de Equipe }
                 @case ('portfolio') { Portfólio de Produtos }
-                @case ('kanban') { Board de Desenvolvimento }
-                @case ('support') { Central de Suporte }
+                @case ('kanban') { Board de Engenharia }
+                @case ('support') { Central de Suporte (QA) }
               }
             </h2>
             <div class="flex items-center gap-4">
@@ -131,20 +148,22 @@ type View = 'public' | 'dashboard' | 'portfolio' | 'kanban' | 'support' | 'sales
           </header>
 
           <!-- Views -->
-          <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
+          <div class="flex-1 p-8">
             @switch (currentView()) {
+              @case ('personal') { <app-personal-view class="animate-in fade-in slide-in-from-bottom-2 duration-500 h-full block"/> }
               @case ('dashboard') { <app-dashboard-view class="animate-in fade-in slide-in-from-bottom-2 duration-500"/> }
-              @case ('sales') { <app-sales-view class="h-full block animate-in fade-in slide-in-from-bottom-2 duration-500"/> }
-              @case ('squads') { <app-squads-view class="h-full block animate-in fade-in slide-in-from-bottom-2 duration-500"/> }
+              @case ('sales') { <app-sales-view class="animate-in fade-in slide-in-from-bottom-2 duration-500 h-full block"/> }
+              @case ('squads') { <app-squads-view class="animate-in fade-in slide-in-from-bottom-2 duration-500 h-full block"/> }
               @case ('portfolio') { <app-portfolio-view class="animate-in fade-in slide-in-from-bottom-2 duration-500"/> }
-              @case ('kanban') { <app-kanban-view class="h-full block animate-in fade-in slide-in-from-bottom-2 duration-500"/> }
-              @case ('support') { <app-support-view class="h-full block animate-in fade-in slide-in-from-bottom-2 duration-500"/> }
+              @case ('kanban') { <app-kanban-view class="animate-in fade-in slide-in-from-bottom-2 duration-500 h-full block"/> }
+              @case ('support') { <app-support-view class="animate-in fade-in slide-in-from-bottom-2 duration-500 h-full block"/> }
             }
           </div>
         </main>
       </div>
     }
-  `,  styles: [`
+  `,
+  styles: [`
     .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #27272a; border-radius: 3px; }

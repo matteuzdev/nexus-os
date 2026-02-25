@@ -169,6 +169,13 @@ import { NexusDrawerComponent } from './nexus-drawer.component';
         }
       </div>
     </div>
+    
+    <app-nexus-drawer 
+      [isOpen]="isDrawerOpen()" 
+      [type]="'ticket'" 
+      [data]="selectedTicket()" 
+      (close)="closeDrawer()">
+    </app-nexus-drawer>
   `,
   styles: [`
     .custom-scrollbar::-webkit-scrollbar { width: 4px; }
@@ -179,6 +186,7 @@ import { NexusDrawerComponent } from './nexus-drawer.component';
 export class SupportViewComponent {
   dataService = inject(DataService);
   selectedTicket = signal<Ticket | null>(null);
+  isDrawerOpen = signal(false);
 
   updateStatus(newStatus: TicketStatus) {
     if (this.selectedTicket()) {
@@ -201,5 +209,14 @@ export class SupportViewComponent {
       const updated = this.dataService.tickets().find(t => t.id === this.selectedTicket()!.id);
       if (updated) this.selectedTicket.set({ ...updated });
     }
+  }
+  
+  openDrawer() {
+    if(this.selectedTicket()) this.isDrawerOpen.set(true);
+  }
+  
+  closeDrawer() {
+    this.isDrawerOpen.set(false);
+    this.selectedTicket.set(null);
   }
 }

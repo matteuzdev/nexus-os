@@ -35,6 +35,7 @@ export interface Task {
   originTicketId?: string;
   comments: TaskComment[];
   assignedTo?: string;
+  deadline?: Date; // Added for SLA/Prazos
 }
 
 export interface Ticket {
@@ -48,6 +49,15 @@ export interface Ticket {
   linkedTaskId?: string;
   createdAt: Date;
   reproductionSteps?: string; // Filled by QA
+  slaHours: number; // SLA
+}
+
+export interface PersonalTask {
+  id: string;
+  title: string;
+  isCompleted: boolean;
+  type: 'Meta' | 'Micro-tarefa' | 'Ideia Maluca';
+  createdAt: Date;
 }
 
 export interface Lead {
@@ -79,6 +89,8 @@ export interface Member {
   avatar: string;
   status: 'Online' | 'Offline' | 'Busy';
   lastActivity: string;
+  level: number;
+  xp: number;
 }
 
 export interface Squad {
@@ -119,12 +131,13 @@ export class DataService {
       status: 'Em Progresso', 
       tag: 'Dev AI', 
       linkedProductId: 'p1',
-      comments: [{ id: 'c1', author: 'Orion', text: 'Iniciando o mapeamento dos endpoints.', timestamp: new Date() }]
+      comments: [{ id: 'c1', author: 'Orion', text: 'Iniciando o mapeamento dos endpoints.', timestamp: new Date() }],
+      deadline: new Date(new Date().getTime() + 86400000 * 2) // +2 days
     }
   ]);
 
   tickets = signal<Ticket[]>(this.load('tickets') || [
-    { id: 'tk1', client: 'Empresa ABC', title: 'Erro ao gerar relatório PDF', description: 'O sistema trava quando tento exportar o relatório mensal.', priority: 'Alta', status: 'Aberto', linkedProductId: 'p1', createdAt: new Date() },
+    { id: 'tk1', client: 'Empresa ABC', title: 'Erro ao gerar relatório PDF', description: 'O sistema trava quando tento exportar o relatório mensal.', priority: 'Alta', status: 'Aberto', linkedProductId: 'p1', createdAt: new Date(), slaHours: 4 },
   ]);
 
   leads = signal<Lead[]>(this.load('leads') || [
@@ -150,6 +163,12 @@ export class DataService {
     }
   ]);
 
+  personalTasks = signal<PersonalTask[]>(this.load('personalTasks') || [
+    { id: 'pt1', title: 'Aprender a fazer crochê avançado', isCompleted: false, type: 'Ideia Maluca', createdAt: new Date() },
+    { id: 'pt2', title: 'Revisar fluxo de vendas', isCompleted: false, type: 'Meta', createdAt: new Date() },
+    { id: 'pt3', title: 'Responder e-mail do Marcos', isCompleted: true, type: 'Micro-tarefa', createdAt: new Date() },
+  ]);
+
   squads = signal<Squad[]>(this.load('squads') || [
     {
       id: 's1',
@@ -158,8 +177,8 @@ export class DataService {
       kpi: 'Conversão de Leads',
       healthScore: 92,
       members: [
-        { id: 'm1', name: 'Ana SDR', role: 'Closer', avatar: 'AS', status: 'Online', lastActivity: 'Investigando Lead "Startup X"' },
-        { id: 'm2', name: 'Lucas CS', role: 'Account Manager', avatar: 'LC', status: 'Busy', lastActivity: 'Onboarding Indústria Prime' }
+        { id: 'm1', name: 'Ana SDR', role: 'Closer', avatar: 'AS', status: 'Online', lastActivity: 'Investigando Lead "Startup X"', level: 4, xp: 450 },
+        { id: 'm2', name: 'Lucas CS', role: 'Account Manager', avatar: 'LC', status: 'Busy', lastActivity: 'Onboarding Indústria Prime', level: 3, xp: 320 }
       ]
     },
     {
@@ -169,7 +188,8 @@ export class DataService {
       kpi: 'Sprint Velocity',
       healthScore: 88,
       members: [
-        { id: 'm3', name: 'Orion (AI)', role: 'Dev Fullstack', avatar: 'O', status: 'Online', lastActivity: 'Codando Nexus Pro' }
+        { id: 'm3', name: 'Orion (AI)', role: 'Dev Fullstack', avatar: 'O', status: 'Online', lastActivity: 'Codando Nexus Pro', level: 10, xp: 5000 },
+        { id: 'm4', name: 'Carla QA', role: 'Quality Assurance', avatar: 'CQ', status: 'Offline', lastActivity: 'Validou Story #402', level: 5, xp: 800 }
       ]
     }
   ]);
@@ -183,6 +203,7 @@ export class DataService {
     effect(() => this.save('leads', this.leads()));
     effect(() => this.save('squads', this.squads()));
     effect(() => this.save('messages', this.messages()));
+    effect(() => this.save('personalTasks', this.personalTasks()));
   }
 
   private save(key: string, data: any) {
@@ -194,12 +215,13 @@ export class DataService {
     if (!data) return null;
     try {
       const parsed = JSON.parse(data);
-      if (key === 'messages' || key === 'tickets' || key === 'leads' || key === 'tasks') {
+      if (['messages', 'tickets', 'leads', 'tasks', 'personalTasks'].includes(key)) {
         return parsed.map((item: any) => ({ 
           ...item, 
           timestamp: item.timestamp ? new Date(item.timestamp) : undefined, 
           lastContact: item.lastContact ? new Date(item.lastContact) : undefined, 
           createdAt: item.createdAt ? new Date(item.createdAt) : undefined,
+          deadline: item.deadline ? new Date(item.deadline) : undefined,
           comments: item.comments ? item.comments.map((c: any) => ({ ...c, timestamp: new Date(c.timestamp) })) : []
         }));
       }
@@ -215,6 +237,20 @@ export class DataService {
     .filter(l => l.status !== 'Fechado' && l.status !== 'Perdido')
     .reduce((acc, l) => acc + l.value, 0)
   );
+
+  // --- CRUD: PERSONAL TASKS ---
+  addPersonalTask(task: Omit<PersonalTask, 'id' | 'createdAt'>) {
+    const newId = 'pt' + Date.now();
+    this.personalTasks.update(prev => [{ ...task, id: newId, createdAt: new Date() }, ...prev]);
+  }
+
+  togglePersonalTask(id: string) {
+    this.personalTasks.update(prev => prev.map(t => t.id === id ? { ...t, isCompleted: !t.isCompleted } : t));
+  }
+
+  deletePersonalTask(id: string) {
+    this.personalTasks.update(prev => prev.filter(t => t.id !== id));
+  }
 
   // --- CRUD: LEADS ---
   updateLead(lead: Lead) {
@@ -245,6 +281,10 @@ export class DataService {
   addTaskComment(taskId: string, author: string, text: string) {
     const comment: TaskComment = { id: 'c' + Date.now(), author, text, timestamp: new Date() };
     this.tasks.update(prev => prev.map(t => t.id === taskId ? { ...t, comments: [...t.comments, comment] } : t));
+  }
+
+  deleteTask(id: string) {
+    this.tasks.update(prev => prev.filter(t => t.id !== id));
   }
 
   // --- CRUD: PRODUCTS ---
@@ -281,13 +321,14 @@ export class DataService {
 
     const newTaskId = this.addTask({
       title: `[Do Suporte] ${ticket.title}`,
-      description: `Cliente: ${ticket.client}\nDescrição: ${ticket.description}`,
+      description: `Cliente: ${ticket.client}\nDescrição: ${ticket.description}\nPassos p/ Reproduzir: ${ticket.reproductionSteps || 'N/A'}`,
       type: 'Bug',
-      points: 0,
-      status: 'Backlog',
+      points: 2,
+      status: 'A Fazer',
       tag: 'Suporte',
       linkedProductId: ticket.linkedProductId,
-      originTicketId: ticket.id
+      originTicketId: ticket.id,
+      deadline: new Date(new Date().getTime() + (ticket.slaHours * 3600000))
     });
 
     this.tickets.update(prev => prev.map(t => 
@@ -332,8 +373,28 @@ export class DataService {
   }
 
   sendMessage(content: string, senderName: string, isPrivate: boolean = false) {
-    const newMessage: Message = { id: 'msg' + Date.now(), senderId: senderName.includes('CEO') ? 'ceo' : 'm3', senderName, content, timestamp: new Date(), isPrivate };
+    const newMessage: Message = { id: 'msg' + Date.now(), senderId: senderName.includes('CEO') ? 'ceo' : senderName.toLowerCase().replace(' ', ''), senderName, content, timestamp: new Date(), isPrivate };
     this.messages.update(prev => [...prev, newMessage]);
+  }
+
+  // Gamification & Agents
+  addXP(memberId: string, amount: number) {
+    this.squads.update(squads => squads.map(s => {
+      const memberIndex = s.members.findIndex(m => m.id === memberId);
+      if (memberIndex > -1) {
+        const members = [...s.members];
+        const m = members[memberIndex];
+        let newXp = m.xp + amount;
+        let newLevel = m.level;
+        if (newXp >= newLevel * 1000) {
+          newLevel++;
+          // Level up!
+        }
+        members[memberIndex] = { ...m, xp: newXp, level: newLevel };
+        return { ...s, members };
+      }
+      return s;
+    }));
   }
 
   clearAllData() {
