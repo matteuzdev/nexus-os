@@ -25,9 +25,11 @@ type View = 'public' | 'dashboard' | 'portfolio' | 'kanban' | 'support' | 'sales
   ],
   template: `
     @if (currentView() === 'public') {
-      <app-public-website (login)="currentView.set('dashboard')"></app-public-website>
+      <div class="h-screen overflow-y-auto custom-scrollbar bg-zinc-950">
+        <app-public-website (login)="currentView.set('dashboard')"></app-public-website>
+      </div>
     } @else {
-      <div class="flex h-screen bg-zinc-950 text-white font-sans selection:bg-indigo-500/30">
+      <div class="flex h-screen bg-zinc-950 text-white font-sans selection:bg-indigo-500/30 overflow-hidden">
         
         <!-- Main Sidebar -->
         <aside class="w-64 bg-zinc-900 border-r border-zinc-800 flex flex-col shrink-0">
@@ -43,7 +45,7 @@ type View = 'public' | 'dashboard' | 'portfolio' | 'kanban' | 'support' | 'sales
           </div>
 
           <!-- Navigation -->
-          <nav class="flex-1 px-3 space-y-1 mt-4">
+          <nav class="flex-1 px-3 space-y-1 mt-4 overflow-y-auto custom-scrollbar">
             <button (click)="currentView.set('dashboard')" 
               class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all"
               [class]="currentView() === 'dashboard' ? 'bg-zinc-800 text-white shadow-inner' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'">
@@ -104,7 +106,7 @@ type View = 'public' | 'dashboard' | 'portfolio' | 'kanban' | 'support' | 'sales
         </aside>
 
         <!-- Content Area -->
-        <main class="flex-1 overflow-y-auto bg-zinc-950 relative custom-scrollbar flex flex-col">
+        <main class="flex-1 overflow-hidden bg-zinc-950 relative flex flex-col">
           <!-- Top Bar -->
           <header class="h-16 border-b border-zinc-800 flex items-center justify-between px-8 shrink-0 bg-zinc-950/80 backdrop-blur-md sticky top-0 z-20">
             <h2 class="text-xl font-semibold text-white tracking-tight">
@@ -129,21 +131,20 @@ type View = 'public' | 'dashboard' | 'portfolio' | 'kanban' | 'support' | 'sales
           </header>
 
           <!-- Views -->
-          <div class="flex-1 p-8">
+          <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
             @switch (currentView()) {
               @case ('dashboard') { <app-dashboard-view class="animate-in fade-in slide-in-from-bottom-2 duration-500"/> }
-              @case ('sales') { <app-sales-view class="animate-in fade-in slide-in-from-bottom-2 duration-500"/> }
-              @case ('squads') { <app-squads-view class="animate-in fade-in slide-in-from-bottom-2 duration-500"/> }
+              @case ('sales') { <app-sales-view class="h-full block animate-in fade-in slide-in-from-bottom-2 duration-500"/> }
+              @case ('squads') { <app-squads-view class="h-full block animate-in fade-in slide-in-from-bottom-2 duration-500"/> }
               @case ('portfolio') { <app-portfolio-view class="animate-in fade-in slide-in-from-bottom-2 duration-500"/> }
-              @case ('kanban') { <app-kanban-view class="animate-in fade-in slide-in-from-bottom-2 duration-500"/> }
-              @case ('support') { <app-support-view class="animate-in fade-in slide-in-from-bottom-2 duration-500"/> }
+              @case ('kanban') { <app-kanban-view class="h-full block animate-in fade-in slide-in-from-bottom-2 duration-500"/> }
+              @case ('support') { <app-support-view class="h-full block animate-in fade-in slide-in-from-bottom-2 duration-500"/> }
             }
           </div>
         </main>
       </div>
     }
-  `,
-  styles: [`
+  `,  styles: [`
     .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #27272a; border-radius: 3px; }

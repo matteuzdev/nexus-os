@@ -53,12 +53,16 @@ export interface Lead {
   id: string;
   company: string;
   contact: string;
-  email?: string;
+  email: string;
+  phone: string;
+  linkedin?: string;
   value: number;
   status: LeadStatus;
   source: string;
   lastContact: Date;
   investigation: {
+    industry: string;
+    companySize: string;
     painPoints: string;
     techStack: string;
     budgetRange: string;
@@ -127,11 +131,15 @@ export class DataService {
       id: 'l1', 
       company: 'Tech Inovação', 
       contact: 'Marcos Silva', 
+      email: 'marcos@techinova.com',
+      phone: '(11) 98888-7777',
       value: 12000, 
       status: 'Lead', 
       source: 'Indicação', 
       lastContact: new Date(),
       investigation: {
+        industry: 'Tecnologia',
+        companySize: '10-50 funcionários',
         painPoints: 'Processos manuais no financeiro',
         techStack: 'Excel e papel',
         budgetRange: 'R$ 10k - 20k',
@@ -185,8 +193,14 @@ export class DataService {
     if (!data) return null;
     try {
       const parsed = JSON.parse(data);
-      if (key === 'messages' || key === 'tickets' || key === 'leads') {
-        return parsed.map((item: any) => ({ ...item, timestamp: item.timestamp ? new Date(item.timestamp) : undefined, lastContact: item.lastContact ? new Date(item.lastContact) : undefined, createdAt: item.createdAt ? new Date(item.createdAt) : undefined }));
+      if (key === 'messages' || key === 'tickets' || key === 'leads' || key === 'tasks') {
+        return parsed.map((item: any) => ({ 
+          ...item, 
+          timestamp: item.timestamp ? new Date(item.timestamp) : undefined, 
+          lastContact: item.lastContact ? new Date(item.lastContact) : undefined, 
+          createdAt: item.createdAt ? new Date(item.createdAt) : undefined,
+          comments: item.comments ? item.comments.map((c: any) => ({ ...c, timestamp: new Date(c.timestamp) })) : []
+        }));
       }
       return parsed;
     } catch { return null; }
@@ -316,8 +330,8 @@ export class DataService {
     return this.products().find(p => p.id === id)?.name || 'Produto Desconhecido';
   }
 
-  sendMessage(content: string, isPrivate: boolean = false) {
-    const newMessage: Message = { id: 'msg' + Date.now(), senderId: isPrivate ? 'ceo' : 'm3', senderName: isPrivate ? 'Matteuz (CEO)' : 'Orion', content, timestamp: new Date(), isPrivate };
+  sendMessage(content: string, senderName: string, isPrivate: boolean = false) {
+    const newMessage: Message = { id: 'msg' + Date.now(), senderId: senderName.includes('CEO') ? 'ceo' : 'm3', senderName, content, timestamp: new Date(), isPrivate };
     this.messages.update(prev => [...prev, newMessage]);
   }
 

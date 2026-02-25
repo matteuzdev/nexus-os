@@ -8,37 +8,37 @@ import { DataService, Member, Squad, Message } from '../services/data.service';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 h-full">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 h-full overflow-hidden">
       
       <!-- Squads & Members Column -->
       <div class="lg:col-span-2 space-y-8 overflow-y-auto custom-scrollbar pr-2">
-        <h3 class="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-          <svg class="w-6 h-6 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+        <h3 class="text-2xl font-black text-white mb-6 flex items-center gap-3 uppercase tracking-tighter">
+          <svg class="w-8 h-8 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
           Estrutura de Squads
         </h3>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           @for (squad of dataService.squads(); track squad.id) {
-            <div class="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden group hover:border-indigo-500/50 transition-all">
+            <div class="bg-zinc-900 border border-zinc-800 rounded-3xl overflow-hidden group hover:border-indigo-500/50 transition-all shadow-xl">
               <!-- Squad Header -->
-              <div class="p-5 border-b border-zinc-800 bg-zinc-900/50 flex items-center justify-between">
+              <div class="p-6 border-b border-zinc-800 bg-zinc-900/50 flex items-center justify-between">
                 <div>
-                  <h4 class="font-bold text-white">{{ squad.name }}</h4>
-                  <p class="text-[10px] text-zinc-500 uppercase tracking-widest">{{ squad.kpi }}</p>
+                  <h4 class="font-black text-white uppercase tracking-widest text-xs">{{ squad.name }}</h4>
+                  <p class="text-[10px] text-zinc-500 font-mono mt-1">{{ squad.kpi }}</p>
                 </div>
                 <div class="flex flex-col items-end">
-                  <span class="text-xl font-bold text-emerald-400">{{ squad.healthScore }}%</span>
-                  <span class="text-[8px] text-zinc-600 uppercase">Health Score</span>
+                  <span class="text-2xl font-black text-emerald-400">{{ squad.healthScore }}%</span>
+                  <span class="text-[8px] text-zinc-600 uppercase font-bold">Health</span>
                 </div>
               </div>
 
               <!-- Members List -->
-              <div class="p-5 space-y-4">
+              <div class="p-6 space-y-4">
                 @for (member of squad.members; track member.id) {
-                  <div class="flex items-center gap-3 p-3 bg-zinc-950 rounded-xl border border-zinc-800/50">
-                    <div class="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center font-bold text-xs text-indigo-400 border border-zinc-700 relative">
+                  <div class="flex items-center gap-4 p-4 bg-zinc-950 rounded-2xl border border-zinc-800/50 group/item hover:bg-zinc-900 transition-colors">
+                    <div class="w-12 h-12 rounded-2xl bg-zinc-900 flex items-center justify-center font-black text-sm text-indigo-400 border border-zinc-800 relative group-hover/item:border-indigo-500/50 transition-all">
                       {{ member.avatar }}
-                      <div class="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-zinc-950"
+                      <div class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-4 border-zinc-950"
                         [class.bg-emerald-500]="member.status === 'Online'"
                         [class.bg-zinc-600]="member.status === 'Offline'"
                         [class.bg-amber-500]="member.status === 'Busy'"></div>
@@ -46,10 +46,10 @@ import { DataService, Member, Squad, Message } from '../services/data.service';
                     <div class="flex-1 min-w-0">
                       <div class="flex items-center justify-between">
                         <span class="text-sm font-bold text-white truncate">{{ member.name }}</span>
-                        <span class="text-[10px] text-zinc-500">{{ member.role }}</span>
+                        <span class="text-[9px] font-black text-zinc-600 uppercase">{{ member.role }}</span>
                       </div>
-                      <p class="text-[10px] text-indigo-500/80 truncate mt-0.5">
-                        <span class="text-zinc-600">Atividade:</span> {{ member.lastActivity }}
+                      <p class="text-[10px] text-zinc-500 truncate mt-1">
+                        <span class="text-indigo-500/50 font-bold uppercase text-[8px]">Atividade:</span> {{ member.lastActivity }}
                       </p>
                     </div>
                   </div>
@@ -61,30 +61,34 @@ import { DataService, Member, Squad, Message } from '../services/data.service';
       </div>
 
       <!-- Nexus Communication Hub (Chat) -->
-      <div class="flex flex-col bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl h-[calc(100vh-12rem)]">
+      <div class="flex flex-col bg-zinc-900 border border-zinc-800 rounded-3xl overflow-hidden shadow-2xl h-full border-l-4 border-l-indigo-600/20">
         <!-- Chat Header -->
-        <div class="p-5 border-b border-zinc-800 bg-zinc-900/50 flex items-center justify-between">
+        <div class="p-6 border-b border-zinc-800 bg-zinc-900/80 backdrop-blur-md flex items-center justify-between shrink-0">
           <div class="flex items-center gap-3">
-            <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-            <h4 class="font-bold text-white">Nexus Hub</h4>
+            <div class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
+            <h4 class="font-black text-white uppercase tracking-widest text-xs">Nexus Hub</h4>
           </div>
-          <div class="flex gap-2">
-            <button (click)="chatMode.set('all')" [class]="chatMode() === 'all' ? 'text-indigo-400' : 'text-zinc-600'" class="text-[10px] font-bold uppercase hover:text-white transition-colors">Log Geral</button>
-            <span class="text-zinc-800">|</span>
-            <button (click)="chatMode.set('private')" [class]="chatMode() === 'private' ? 'text-indigo-400' : 'text-zinc-600'" class="text-[10px] font-bold uppercase hover:text-white transition-colors">CEO & Orion</button>
+          <div class="flex bg-zinc-950 p-1 rounded-lg border border-zinc-800">
+            <button (click)="chatMode.set('all')" [class]="chatMode() === 'all' ? 'bg-zinc-800 text-white shadow-lg' : 'text-zinc-600'" class="text-[9px] font-black px-3 py-1 rounded uppercase transition-all">Geral</button>
+            <button (click)="chatMode.set('private')" [class]="chatMode() === 'private' ? 'bg-zinc-800 text-white shadow-lg' : 'text-zinc-600'" class="text-[9px] font-black px-3 py-1 rounded uppercase transition-all">Privado</button>
           </div>
         </div>
 
         <!-- Messages Area -->
-        <div class="flex-1 overflow-y-auto p-5 space-y-4 custom-scrollbar bg-zinc-950/30">
+        <div class="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar bg-zinc-950/20" #scrollContainer>
           @for (msg of filteredMessages(); track msg.id) {
-            <div class="flex flex-col animate-in fade-in slide-in-from-bottom-1 duration-300">
-              <div class="flex items-center gap-2 mb-1">
-                <span class="text-[10px] font-bold" [class]="msg.senderId === 'ceo' ? 'text-indigo-400' : 'text-emerald-400'">{{ msg.senderName }}</span>
-                <span class="text-[8px] text-zinc-600 uppercase">{{ msg.timestamp | date:'HH:mm' }}</span>
+            <div class="flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div class="flex items-center gap-2 mb-2">
+                <div class="w-5 h-5 rounded bg-zinc-800 flex items-center justify-center text-[8px] font-black"
+                  [class.text-indigo-400]="msg.senderId === 'ceo'"
+                  [class.text-emerald-400]="msg.senderId !== 'ceo'">
+                  {{ msg.senderName.substring(0,1) }}
+                </div>
+                <span class="text-[10px] font-black uppercase tracking-tighter" [class]="msg.senderId === 'ceo' ? 'text-indigo-400' : 'text-emerald-400'">{{ msg.senderName }}</span>
+                <span class="text-[8px] text-zinc-700 font-mono">{{ msg.timestamp | date:'HH:mm' }}</span>
               </div>
-              <div class="p-3 rounded-2xl text-sm leading-relaxed max-w-[90%]"
-                [class]="msg.senderId === 'ceo' ? 'bg-indigo-600/10 border border-indigo-500/20 text-indigo-100 self-start' : 'bg-zinc-900 border border-zinc-800 text-zinc-300 self-start'">
+              <div class="p-4 rounded-2xl text-sm leading-relaxed max-w-[95%] shadow-sm border"
+                [class]="msg.senderId === 'ceo' ? 'bg-indigo-600/10 border-indigo-500/20 text-indigo-100 rounded-tl-none ml-2' : 'bg-zinc-900 border-zinc-800 text-zinc-300 rounded-tl-none ml-2'">
                 {{ msg.content }}
               </div>
             </div>
@@ -92,13 +96,14 @@ import { DataService, Member, Squad, Message } from '../services/data.service';
         </div>
 
         <!-- Input Area -->
-        <div class="p-4 border-t border-zinc-800 bg-zinc-900/50">
-          <form (submit)="send($event)" class="relative">
+        <div class="p-6 border-t border-zinc-800 bg-zinc-900/50 shrink-0">
+          <form (submit)="send($event)" class="relative group">
+            <div class="absolute inset-0 bg-indigo-500/5 blur-xl group-focus-within:bg-indigo-500/10 transition-all rounded-full"></div>
             <input name="chatInput" [(ngModel)]="newMessage" 
-              class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 pr-12 text-sm text-white focus:border-indigo-500 outline-none transition-all placeholder:text-zinc-700"
-              [placeholder]="chatMode() === 'private' ? 'Falar com Orion...' : 'Enviar para o time...'">
-            <button type="submit" class="absolute right-2 top-1.5 p-1.5 text-indigo-500 hover:text-indigo-400 transition-colors">
-              <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
+              class="relative w-full bg-zinc-950 border border-zinc-800 rounded-2xl p-4 pr-14 text-sm text-white focus:border-indigo-500 outline-none transition-all placeholder:text-zinc-800 font-medium"
+              [placeholder]="chatMode() === 'private' ? 'Comando privado para Orion...' : 'Falar com o squad...'">
+            <button type="submit" class="absolute right-3 top-2.5 p-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-500 transition-all active:scale-90 shadow-lg shadow-indigo-500/20">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
             </button>
           </form>
         </div>
@@ -126,15 +131,35 @@ export class SquadsViewComponent {
     if (!this.newMessage.trim()) return;
     
     const isPrivate = this.chatMode() === 'private';
-    this.dataService.sendMessage(this.newMessage, isPrivate);
+    const sender = 'Matteuz (CEO)';
     
-    // Orion Reply in Private
-    if (isPrivate) {
-      setTimeout(() => {
-        this.dataService.sendMessage('👑 Entendido, Matteuz. Comando processado. O time está sendo notificado via Nexus OS.', true);
-      }, 1000);
+    this.dataService.sendMessage(this.newMessage, sender, isPrivate);
+    
+    // Squad Interactions in "Geral"
+    if (!isPrivate) {
+      this.simulateSquadReply();
+    } else {
+      this.simulateOrionPrivateReply();
     }
 
     this.newMessage = '';
+  }
+
+  simulateSquadReply() {
+    const replies = [
+      { name: 'Ana SDR', msg: 'Lead qualificado e dossiê atualizado, Matteuz!' },
+      { name: 'Carla QA', msg: 'Story #402 está em homologação. Tudo ok até agora.' },
+      { name: 'Orion', msg: 'Sincronizando tarefas com o Kanban do Delivery.' }
+    ];
+    const random = replies[Math.floor(Math.random() * replies.length)];
+    setTimeout(() => {
+      this.dataService.sendMessage(random.msg, random.name, false);
+    }, 1500);
+  }
+
+  simulateOrionPrivateReply() {
+    setTimeout(() => {
+      this.dataService.sendMessage('👑 Comando recebido, Matteuz. Orquestrando squads para prioridade total no seu pedido.', 'Orion', true);
+    }, 1000);
   }
 }
