@@ -16,16 +16,25 @@ export interface Product {
   nextAction: string;
 }
 
+export interface TaskComment {
+  id: string;
+  author: string;
+  text: string;
+  timestamp: Date;
+}
+
 export interface Task {
   id: string;
   title: string;
-  description?: string;
+  description: string;
   type: 'Feature' | 'Bug' | 'Automação' | 'Melhoria';
   points: number;
   status: TaskStatus;
   tag: string;
   linkedProductId?: string;
-  originTicketId?: string; // Link back to support
+  originTicketId?: string;
+  comments: TaskComment[];
+  assignedTo?: string;
 }
 
 export interface Ticket {
@@ -36,7 +45,7 @@ export interface Ticket {
   priority: TicketPriority;
   status: TicketStatus;
   linkedProductId: string;
-  linkedTaskId?: string; // Link forward to dev
+  linkedTaskId?: string;
   createdAt: Date;
 }
 
@@ -44,10 +53,18 @@ export interface Lead {
   id: string;
   company: string;
   contact: string;
+  email?: string;
   value: number;
   status: LeadStatus;
   source: string;
   lastContact: Date;
+  investigation: {
+    painPoints: string;
+    techStack: string;
+    budgetRange: string;
+    decisionMaker: string;
+    notes: string;
+  };
 }
 
 export interface Member {
@@ -74,47 +91,7 @@ export interface Message {
   senderName: string;
   content: string;
   timestamp: Date;
-  isPrivate: boolean; // True if only for Orion & CEO
-}
-
-export interface Lead {
-  id: string;
-  company: string;
-  contact: string;
-  email?: string;
-  value: number;
-  status: LeadStatus;
-  source: string;
-  lastContact: Date;
-  // SDR Investigation Data
-  investigation: {
-    painPoints: string;
-    techStack: string;
-    budgetRange: string;
-    decisionMaker: string;
-    notes: string;
-  };
-}
-
-export interface TaskComment {
-  id: string;
-  author: string;
-  text: string;
-  timestamp: Date;
-}
-
-export interface Task {
-  id: string;
-  title: string;
-  description: string;
-  type: 'Feature' | 'Bug' | 'Automação' | 'Melhoria';
-  points: number;
-  status: TaskStatus;
-  tag: string;
-  linkedProductId?: string;
-  originTicketId?: string;
-  comments: TaskComment[];
-  assignedTo?: string;
+  isPrivate: boolean;
 }
 
 @Injectable({
@@ -215,6 +192,15 @@ export class DataService {
     } catch { return null; }
   }
 
+  // --- COMPUTED ---
+  totalRevenue = computed(() => this.products().reduce((acc, p) => acc + p.revenue, 0));
+  activeTasks = computed(() => this.tasks().filter(t => t.status === 'Em Progresso').length);
+  openTickets = computed(() => this.tickets().filter(t => t.status !== 'Resolvido').length);
+  pipelineValue = computed(() => this.leads()
+    .filter(l => l.status !== 'Fechado' && l.status !== 'Perdido')
+    .reduce((acc, l) => acc + l.value, 0)
+  );
+
   // --- CRUD: LEADS ---
   updateLead(lead: Lead) {
     this.leads.update(prev => prev.map(l => l.id === lead.id ? lead : l));
@@ -254,6 +240,44 @@ export class DataService {
   addProduct(product: Omit<Product, 'id'>) {
     const newId = 'p' + Date.now();
     this.products.update(prev => [...prev, { ...product, id: newId }]);
+    return newId;
+  }
+
+  // --- ACTIONS: TICKETS ---
+  addTicket(ticket: Omit<Ticket, 'id' | 'createdAt' | 'status'>) {
+    const newId = 'tk' + Date.now();
+    this.tickets.update(prev => [
+      { ...ticket, id: newId, status: 'Aberto', createdAt: new Date() },
+      ...prev
+    ]);
+  }
+
+  updateTicketStatus(id: string, status: TicketStatus) {
+    this.tickets.update(prev => prev.map(t => t.id === id ? { ...t, status } : t));
+  }
+
+  deleteTicket(id: string) {
+    this.tickets.update(prev => prev.filter(t => t.id !== id));
+  }
+
+  escalateTicketToDev(ticketId: string) {
+    const ticket = this.tickets().find(t => t.id === ticketId);
+    if (!ticket) return;
+
+    const newTaskId = this.addTask({
+      title: `[Do Suporte] ${ticket.title}`,
+      description: `Cliente: ${ticket.client}\nDescrição: ${ticket.description}`,
+      type: 'Bug',
+      points: 0,
+      status: 'Backlog',
+      tag: 'Suporte',
+      linkedProductId: ticket.linkedProductId,
+      originTicketId: ticket.id
+    });
+
+    this.tickets.update(prev => prev.map(t => 
+      t.id === ticketId ? { ...t, status: 'Aguardando Dev', linkedTaskId: newTaskId } : t
+    ));
   }
 
   // --- ACTIONS ---
@@ -271,7 +295,16 @@ export class DataService {
         revenue: lead.value,
         nextAction: 'Kickoff técnico'
       });
-      // Logic for automatic task creation follows...
+      
+      this.addTask({
+        title: `Setup Inicial & Kickoff: ${lead.company}`,
+        description: `Dossiê: ${lead.investigation.notes}`,
+        type: 'Feature',
+        points: 5,
+        status: 'A Fazer',
+        tag: 'Onboarding',
+        linkedProductId: newProductId
+      });
     }
   }
 
@@ -286,117 +319,6 @@ export class DataService {
   sendMessage(content: string, isPrivate: boolean = false) {
     const newMessage: Message = { id: 'msg' + Date.now(), senderId: isPrivate ? 'ceo' : 'm3', senderName: isPrivate ? 'Matteuz (CEO)' : 'Orion', content, timestamp: new Date(), isPrivate };
     this.messages.update(prev => [...prev, newMessage]);
-  }
-}  moveTask(taskId: string, newStatus: TaskStatus) {
-    this.tasks.update(tasks => 
-      tasks.map(t => t.id === taskId ? { ...t, status: newStatus } : t)
-    );
-  }
-
-  addTask(task: Omit<Task, 'id'>) {
-    const newId = 't' + (this.tasks().length + 1 + Math.floor(Math.random() * 1000));
-    this.tasks.update(prev => [...prev, { ...task, id: newId }]);
-    return newId;
-  }
-
-  // --- ACTIONS: TICKETS ---
-  addTicket(ticket: Omit<Ticket, 'id' | 'createdAt' | 'status'>) {
-    const newId = 'tk' + (this.tickets().length + 1 + Math.floor(Math.random() * 1000));
-    this.tickets.update(prev => [
-      { ...ticket, id: newId, status: 'Aberto', createdAt: new Date() },
-      ...prev
-    ]);
-  }
-
-  updateTicketStatus(id: string, status: TicketStatus) {
-    this.tickets.update(prev => prev.map(t => t.id === id ? { ...t, status } : t));
-  }
-
-  deleteTicket(id: string) {
-    this.tickets.update(prev => prev.filter(t => t.id !== id));
-  }
-
-  // --- ACTIONS: INTERCONNECTION ---
-  
-  // Creates a Dev Task from a Support Ticket
-  escalateTicketToDev(ticketId: string) {
-    const ticket = this.tickets().find(t => t.id === ticketId);
-    if (!ticket) return;
-
-    // 1. Create the Task
-    const newTaskId = this.addTask({
-      title: `[Do Suporte] ${ticket.title}`,
-      description: `Cliente: ${ticket.client}\nDescrição: ${ticket.description}`,
-      type: 'Bug',
-      points: 0, // Needs refining
-      status: 'Backlog',
-      tag: 'Suporte',
-      linkedProductId: ticket.linkedProductId,
-      originTicketId: ticket.id
-    });
-
-    // 2. Link Ticket to Task and Update Status
-    this.tickets.update(prev => prev.map(t => 
-      t.id === ticketId ? { ...t, status: 'Aguardando Dev', linkedTaskId: newTaskId } : t
-    ));
-  }
-
-  getProductName(id: string): string {
-    return this.products().find(p => p.id === id)?.name || 'Produto Desconhecido';
-  }
-
-  // --- ACTIONS: SALES ---
-  moveLead(leadId: string, newStatus: LeadStatus) {
-    this.leads.update(leads =>
-      leads.map(l => l.id === leadId ? { ...l, status: newStatus } : l)
-    );
-
-    // --- AUTOMAÇÃO DE VENDAS ---
-    if (newStatus === 'Fechado') {
-      const lead = this.leads().find(l => l.id === leadId);
-      if (lead) {
-        // 1. Cria o Produto/Projeto no Portfólio
-        const newProductId = 'p' + (this.products().length + 1 + Math.floor(Math.random() * 1000));
-        this.products.update(prev => [...prev, {
-          id: newProductId,
-          name: `Projeto: ${lead.company}`,
-          stage: 'Ideação',
-          version: 'v0.1.0',
-          revenue: lead.value,
-          nextAction: 'Realizar reunião de Kickoff técnica'
-        }]);
-
-        // 2. Cria a Tarefa de Onboarding no Kanban (Dev/Ops)
-        this.addTask({
-          title: `Setup Inicial & Kickoff: ${lead.company}`,
-          description: `Contato: ${lead.contact}\nOrigem: ${lead.source}\nValor: R$ ${lead.value}`,
-          type: 'Feature',
-          points: 5,
-          status: 'A Fazer',
-          tag: 'Onboarding',
-          linkedProductId: newProductId
-        });
-
-        // 3. Cria um Ticket de Boas-vindas no Suporte/CS
-        this.addTicket({
-          title: 'Onboarding de Novo Cliente',
-          client: lead.company,
-          description: `Novo contrato fechado com ${lead.contact}. Iniciar processo de boas-vindas e setup de acessos.`,
-          priority: 'Alta',
-          linkedProductId: newProductId
-        });
-      }
-    }
-  }
-
-  addLead(lead: Omit<Lead, 'id' | 'lastContact'>) {
-    const newId = 'l' + (this.leads().length + 1 + Math.floor(Math.random() * 1000));
-    this.leads.update(prev => [...prev, { ...lead, id: newId, lastContact: new Date() }]);
-  }
-
-  addProduct(product: Omit<Product, 'id'>) {
-    const newId = 'p' + (this.products().length + 1 + Math.floor(Math.random() * 1000));
-    this.products.update(prev => [...prev, { ...product, id: newId }]);
   }
 
   clearAllData() {
