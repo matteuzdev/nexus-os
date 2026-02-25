@@ -1,10 +1,11 @@
 import { Injectable, signal, computed, effect } from '@angular/core';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 export type LifecycleStage = 'Ideação' | 'Validação' | 'Desenvolvimento' | 'Produção' | 'Manutenção';
 export type TaskStatus = 'Backlog' | 'A Fazer' | 'Em Progresso' | 'Revisão' | 'Concluído';
 export type TicketPriority = 'Baixa' | 'Média' | 'Alta' | 'Crítica';
 export type TicketStatus = 'Aberto' | 'Em Análise' | 'Aguardando Dev' | 'Resolvido';
-export type LeadStatus = 'Lead' | 'Qualificado' | 'Proposta' | 'Negociação' | 'Fechado' | 'Perdido';
+export type LeadStatus = 'Prospecção' | 'Lead' | 'Qualificado' | 'Proposta' | 'Negociação' | 'Fechado' | 'Perdido';
 export type SquadType = 'Growth' | 'Delivery' | 'Estratégia';
 
 export interface Product {
@@ -35,7 +36,7 @@ export interface Task {
   originTicketId?: string;
   comments: TaskComment[];
   assignedTo?: string;
-  deadline?: Date; // Added for SLA/Prazos
+  deadline?: Date;
 }
 
 export interface Ticket {
@@ -48,8 +49,8 @@ export interface Ticket {
   linkedProductId: string;
   linkedTaskId?: string;
   createdAt: Date;
-  reproductionSteps?: string; // Filled by QA
-  slaHours: number; // SLA
+  reproductionSteps?: string;
+  slaHours: number;
 }
 
 export interface PersonalTask {
@@ -115,118 +116,125 @@ export interface Message {
   providedIn: 'root'
 })
 export class DataService {
+  private supabase: SupabaseClient;
+
   // --- STATE ---
-  products = signal<Product[]>(this.load('products') || [
-    { id: 'p1', name: 'Plataforma E-com AI', stage: 'Produção', version: 'v2.1.0', revenue: 15000, nextAction: 'Monitorar escala de servidores' },
-    { id: 'p2', name: 'Bot de Atendimento Whats', stage: 'Desenvolvimento', version: 'v0.9.beta', revenue: 0, nextAction: 'Finalizar integração API Meta' },
-  ]);
-
-  tasks = signal<Task[]>(this.load('tasks') || [
-    { 
-      id: 't1', 
-      title: 'Integrar API do Gemini', 
-      description: 'Implementar o serviço de IA para triagem automática.',
-      type: 'Feature', 
-      points: 8, 
-      status: 'Em Progresso', 
-      tag: 'Dev AI', 
-      linkedProductId: 'p1',
-      comments: [{ id: 'c1', author: 'Orion', text: 'Iniciando o mapeamento dos endpoints.', timestamp: new Date() }],
-      deadline: new Date(new Date().getTime() + 86400000 * 2) // +2 days
-    }
-  ]);
-
-  tickets = signal<Ticket[]>(this.load('tickets') || [
-    { id: 'tk1', client: 'Empresa ABC', title: 'Erro ao gerar relatório PDF', description: 'O sistema trava quando tento exportar o relatório mensal.', priority: 'Alta', status: 'Aberto', linkedProductId: 'p1', createdAt: new Date(), slaHours: 4 },
-  ]);
-
-  leads = signal<Lead[]>(this.load('leads') || [
-    { 
-      id: 'l1', 
-      company: 'Tech Inovação', 
-      contact: 'Marcos Silva', 
-      email: 'marcos@techinova.com',
-      phone: '(11) 98888-7777',
-      value: 12000, 
-      status: 'Lead', 
-      source: 'Indicação', 
-      lastContact: new Date(),
-      investigation: {
-        industry: 'Tecnologia',
-        companySize: '10-50 funcionários',
-        painPoints: 'Processos manuais no financeiro',
-        techStack: 'Excel e papel',
-        budgetRange: 'R$ 10k - 20k',
-        decisionMaker: 'Marcos (CEO)',
-        notes: 'Cliente muito interessado em automação com IA.'
-      }
-    }
-  ]);
-
-  personalTasks = signal<PersonalTask[]>(this.load('personalTasks') || [
-    { id: 'pt1', title: 'Aprender a fazer crochê avançado', isCompleted: false, type: 'Ideia Maluca', createdAt: new Date() },
-    { id: 'pt2', title: 'Revisar fluxo de vendas', isCompleted: false, type: 'Meta', createdAt: new Date() },
-    { id: 'pt3', title: 'Responder e-mail do Marcos', isCompleted: true, type: 'Micro-tarefa', createdAt: new Date() },
-  ]);
-
-  squads = signal<Squad[]>(this.load('squads') || [
-    {
-      id: 's1',
-      name: 'Squad Growth',
-      type: 'Growth',
-      kpi: 'Conversão de Leads',
-      healthScore: 92,
-      members: [
-        { id: 'm1', name: 'Ana SDR', role: 'Closer', avatar: 'AS', status: 'Online', lastActivity: 'Investigando Lead "Startup X"', level: 4, xp: 450 },
-        { id: 'm2', name: 'Lucas CS', role: 'Account Manager', avatar: 'LC', status: 'Busy', lastActivity: 'Onboarding Indústria Prime', level: 3, xp: 320 }
-      ]
-    },
-    {
-      id: 's2',
-      name: 'Squad Delivery',
-      type: 'Delivery',
-      kpi: 'Sprint Velocity',
-      healthScore: 88,
-      members: [
-        { id: 'm3', name: 'Orion (AI)', role: 'Dev Fullstack', avatar: 'O', status: 'Online', lastActivity: 'Codando Nexus Pro', level: 10, xp: 5000 },
-        { id: 'm4', name: 'Carla QA', role: 'Quality Assurance', avatar: 'CQ', status: 'Offline', lastActivity: 'Validou Story #402', level: 5, xp: 800 }
-      ]
-    }
-  ]);
-
-  messages = signal<Message[]>(this.load('messages') || []);
+  products = signal<Product[]>([]);
+  tasks = signal<Task[]>([]);
+  tickets = signal<Ticket[]>([]);
+  leads = signal<Lead[]>([]);
+  personalTasks = signal<PersonalTask[]>([]);
+  squads = signal<Squad[]>([]);
+  messages = signal<Message[]>([]);
 
   constructor() {
-    effect(() => this.save('products', this.products()));
-    effect(() => this.save('tasks', this.tasks()));
-    effect(() => this.save('tickets', this.tickets()));
-    effect(() => this.save('leads', this.leads()));
-    effect(() => this.save('squads', this.squads()));
-    effect(() => this.save('messages', this.messages()));
-    effect(() => this.save('personalTasks', this.personalTasks()));
+    const supabaseUrl = 'https://qaxxorrgzdubxbckluzw.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFheHhvcnJnemR1YnhiY2tsdXp3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwNTQyMjIsImV4cCI6MjA4NzYzMDIyMn0.NtoEWhcdrm0n_dbNXsggYN-C9X4T4Ufi-spVMyBW6Oc';
+    
+    this.supabase = createClient(supabaseUrl, supabaseKey);
+    this.initializeData();
+    this.setupRealtime();
   }
 
-  private save(key: string, data: any) {
-    localStorage.setItem(`nexus_${key}`, JSON.stringify(data));
+  private async initializeData() {
+    await Promise.all([
+      this.fetchLeads(),
+      this.fetchProducts(),
+      this.fetchTasks(),
+      this.fetchTickets(),
+      this.fetchMessages(),
+      this.fetchPersonalTasks(),
+      this.fetchSquads()
+    ]);
   }
 
-  private load(key: string): any {
-    const data = localStorage.getItem(`nexus_${key}`);
-    if (!data) return null;
-    try {
-      const parsed = JSON.parse(data);
-      if (['messages', 'tickets', 'leads', 'tasks', 'personalTasks'].includes(key)) {
-        return parsed.map((item: any) => ({ 
-          ...item, 
-          timestamp: item.timestamp ? new Date(item.timestamp) : undefined, 
-          lastContact: item.lastContact ? new Date(item.lastContact) : undefined, 
-          createdAt: item.createdAt ? new Date(item.createdAt) : undefined,
-          deadline: item.deadline ? new Date(item.deadline) : undefined,
-          comments: item.comments ? item.comments.map((c: any) => ({ ...c, timestamp: new Date(c.timestamp) })) : []
-        }));
-      }
-      return parsed;
-    } catch { return null; }
+  private setupRealtime() {
+    this.supabase
+      .channel('nexus-changes')
+      .on('postgres_changes', { event: '*', schema: 'public' }, () => {
+        this.initializeData();
+      })
+      .subscribe();
+  }
+
+  // --- FETCHERS ---
+  private async fetchLeads() {
+    const { data } = await this.supabase.from('leads').select('*').order('created_at', { ascending: false });
+    if (data) this.leads.set(data.map(l => ({ ...l, lastContact: new Date(l.last_contact) })));
+  }
+
+  private async fetchProducts() {
+    const { data } = await this.supabase.from('products').select('*').order('created_at', { ascending: false });
+    if (data && data.length > 0) {
+      this.products.set(data);
+    } else {
+      this.seedProducts();
+    }
+  }
+
+  private async seedProducts() {
+    const defaultProducts = [
+      { name: 'Landing Page High-Conversion', stage: 'Produção', version: 'v1.0.0', revenue: 2500, next_action: 'Otimizar SEO' },
+      { name: 'Site Institucional Premium', stage: 'Desenvolvimento', version: 'v0.9.0', revenue: 5000, next_action: 'Finalizar seção de blog' },
+      { name: 'Sistema com Agendamento', stage: 'Ideação', version: 'v0.1.0', revenue: 0, next_action: 'Modelar fluxo' },
+      { name: 'Automação de Processos', stage: 'Validação', version: 'v0.5.0', revenue: 0, next_action: 'Integrar APIs' },
+      { name: 'Agente de IA Corporativo', stage: 'Ideação', version: 'v0.1.0', revenue: 0, next_action: 'Prompt engineering' },
+    ];
+    await this.supabase.from('products').insert(defaultProducts);
+    this.fetchProducts();
+  }
+
+  private async fetchTasks() {
+    const { data } = await this.supabase.from('tasks').select('*').order('created_at', { ascending: false });
+    if (data) this.tasks.set(data.map(t => ({ 
+      ...t, 
+      deadline: t.deadline ? new Date(t.deadline) : undefined,
+      comments: t.comments || [] 
+    })));
+  }
+
+  private async fetchTickets() {
+    const { data } = await this.supabase.from('tickets').select('*').order('created_at', { ascending: false });
+    if (data) this.tickets.set(data.map(tk => ({ ...tk, createdAt: new Date(tk.created_at) })));
+  }
+
+  private async fetchMessages() {
+    const { data } = await this.supabase.from('messages').select('*').order('timestamp', { ascending: true });
+    if (data) this.messages.set(data.map(m => ({ ...m, timestamp: new Date(m.timestamp) })));
+  }
+
+  private async fetchPersonalTasks() {
+    const { data } = await this.supabase.from('personal_tasks').select('*').order('created_at', { ascending: false });
+    if (data) this.personalTasks.set(data.map(pt => ({ ...pt, createdAt: new Date(pt.created_at) })));
+  }
+
+  private async fetchSquads() {
+    const { data } = await this.supabase.from('squad_members').select('*');
+    if (data && data.length > 0) {
+      this.squads.set([
+        {
+          id: 's1', name: 'Squad Growth', type: 'Growth', kpi: 'Conversão de Leads', healthScore: 92,
+          members: data.filter(m => ['m1', 'm2'].includes(m.id))
+        },
+        {
+          id: 's2', name: 'Squad Delivery', type: 'Delivery', kpi: 'Sprint Velocity', healthScore: 88,
+          members: data.filter(m => ['m3', 'm4'].includes(m.id))
+        }
+      ]);
+    } else {
+      this.seedSquads();
+    }
+  }
+
+  private async seedSquads() {
+    const initialMembers = [
+      { id: 'm1', name: 'Ana SDR', role: 'Closer', avatar: 'AS', status: 'Online', last_activity: 'Prospectando no LinkedIn', level: 4, xp: 450 },
+      { id: 'm2', name: 'Lucas CS', role: 'Account Manager', avatar: 'LC', status: 'Busy', last_activity: 'Nutrindo Leads', level: 3, xp: 320 },
+      { id: 'm3', name: 'Orion (AI)', role: 'Dev Fullstack', avatar: 'O', status: 'Online', last_activity: 'Codando V2.0', level: 10, xp: 5000 },
+      { id: 'm4', name: 'Carla QA', role: 'Quality Assurance', avatar: 'CQ', status: 'Offline', last_activity: 'Homologando Automação', level: 5, xp: 800 }
+    ];
+    await this.supabase.from('squad_members').insert(initialMembers);
+    this.fetchSquads();
   }
 
   // --- COMPUTED ---
@@ -239,87 +247,90 @@ export class DataService {
   );
 
   // --- CRUD: PERSONAL TASKS ---
-  addPersonalTask(task: Omit<PersonalTask, 'id' | 'createdAt'>) {
-    const newId = 'pt' + Date.now();
-    this.personalTasks.update(prev => [{ ...task, id: newId, createdAt: new Date() }, ...prev]);
+  async addPersonalTask(task: Omit<PersonalTask, 'id' | 'createdAt'>) {
+    await this.supabase.from('personal_tasks').insert([task]);
   }
 
-  togglePersonalTask(id: string) {
-    this.personalTasks.update(prev => prev.map(t => t.id === id ? { ...t, isCompleted: !t.isCompleted } : t));
+  async togglePersonalTask(id: string) {
+    const task = this.personalTasks().find(t => t.id === id);
+    if (task) {
+      await this.supabase.from('personal_tasks').update({ is_completed: !task.isCompleted }).eq('id', id);
+    }
   }
 
-  deletePersonalTask(id: string) {
-    this.personalTasks.update(prev => prev.filter(t => t.id !== id));
+  async deletePersonalTask(id: string) {
+    await this.supabase.from('personal_tasks').delete().eq('id', id);
   }
 
   // --- CRUD: LEADS ---
-  updateLead(lead: Lead) {
-    this.leads.update(prev => prev.map(l => l.id === lead.id ? lead : l));
+  async updateLead(lead: Lead) {
+    const { id, ...updateData } = lead;
+    await this.supabase.from('leads').update(updateData).eq('id', id);
   }
 
-  deleteLead(id: string) {
-    this.leads.update(prev => prev.filter(l => l.id !== id));
+  async deleteLead(id: string) {
+    await this.supabase.from('leads').delete().eq('id', id);
   }
 
-  addLead(lead: Omit<Lead, 'id' | 'lastContact'>) {
-    const newId = 'l' + Date.now();
-    this.leads.update(prev => [...prev, { ...lead, id: newId, lastContact: new Date() }]);
-    return newId;
+  async addLead(lead: Omit<Lead, 'id' | 'lastContact'>) {
+    const { data } = await this.supabase.from('leads').insert([lead]).select();
+    return data ? data[0].id : null;
   }
 
   // --- CRUD: TASKS ---
-  updateTask(task: Task) {
-    this.tasks.update(prev => prev.map(t => t.id === task.id ? task : t));
+  async updateTask(task: Task) {
+    const { id, ...updateData } = task;
+    await this.supabase.from('tasks').update(updateData).eq('id', id);
   }
 
-  addTask(task: Omit<Task, 'id' | 'comments'>) {
-    const newId = 't' + Date.now();
-    this.tasks.update(prev => [...prev, { ...task, id: newId, comments: [] }]);
-    return newId;
+  async addTask(task: Omit<Task, 'id' | 'comments'>) {
+    const { data } = await this.supabase.from('tasks').insert([task]).select();
+    return data ? data[0].id : null;
   }
 
-  addTaskComment(taskId: string, author: string, text: string) {
-    const comment: TaskComment = { id: 'c' + Date.now(), author, text, timestamp: new Date() };
-    this.tasks.update(prev => prev.map(t => t.id === taskId ? { ...t, comments: [...t.comments, comment] } : t));
+  async addTaskComment(taskId: string, author: string, text: string) {
+    const task = this.tasks().find(t => t.id === taskId);
+    if (task) {
+      const newComment = { id: 'c' + Date.now(), author, text, timestamp: new Date() };
+      await this.supabase.from('tasks').update({ 
+        comments: [...task.comments, newComment] 
+      }).eq('id', taskId);
+    }
   }
 
-  deleteTask(id: string) {
-    this.tasks.update(prev => prev.filter(t => t.id !== id));
+  async deleteTask(id: string) {
+    await this.supabase.from('tasks').delete().eq('id', id);
   }
 
   // --- CRUD: PRODUCTS ---
-  updateProduct(product: Product) {
-    this.products.update(prev => prev.map(p => p.id === product.id ? product : p));
+  async updateProduct(product: Product) {
+    const { id, ...updateData } = product;
+    await this.supabase.from('products').update(updateData).eq('id', id);
   }
   
-  addProduct(product: Omit<Product, 'id'>) {
-    const newId = 'p' + Date.now();
-    this.products.update(prev => [...prev, { ...product, id: newId }]);
-    return newId;
+  async addProduct(product: Omit<Product, 'id'>) {
+    const { data } = await this.supabase.from('products').insert([product]).select();
+    return data ? data[0].id : null;
   }
 
-  // --- ACTIONS: TICKETS ---
-  addTicket(ticket: Omit<Ticket, 'id' | 'createdAt' | 'status'>) {
-    const newId = 'tk' + Date.now();
-    this.tickets.update(prev => [
-      { ...ticket, id: newId, status: 'Aberto', createdAt: new Date() },
-      ...prev
-    ]);
+  // --- CRUD: TICKETS ---
+  async addTicket(ticket: Omit<Ticket, 'id' | 'createdAt' | 'status'>) {
+    await this.supabase.from('tickets').insert([ticket]);
   }
 
-  updateTicketStatus(id: string, status: TicketStatus) {
-    this.tickets.update(prev => prev.map(t => t.id === id ? { ...t, status } : t));
+  async updateTicketStatus(id: string, status: TicketStatus) {
+    await this.supabase.from('tickets').update({ status }).eq('id', id);
   }
 
-  deleteTicket(id: string) {
-    this.tickets.update(prev => prev.filter(t => t.id !== id));
+  async deleteTicket(id: string) {
+    await this.supabase.from('tickets').delete().eq('id', id);
   }
 
-  escalateTicketToDev(ticketId: string) {
+  async escalateTicketToDev(ticketId: string) {
     const ticket = this.tickets().find(t => t.id === ticketId);
     if (!ticket) return;
 
-    const newTaskId = this.addTask({
+    const newTaskId = await this.addTask({
       title: `[Do Suporte] ${ticket.title}`,
       description: `Cliente: ${ticket.client}\nDescrição: ${ticket.description}\nPassos p/ Reproduzir: ${ticket.reproductionSteps || 'N/A'}`,
       type: 'Bug',
@@ -331,70 +342,72 @@ export class DataService {
       deadline: new Date(new Date().getTime() + (ticket.slaHours * 3600000))
     });
 
-    this.tickets.update(prev => prev.map(t => 
-      t.id === ticketId ? { ...t, status: 'Aguardando Dev', linkedTaskId: newTaskId } : t
-    ));
-  }
-
-  // --- ACTIONS ---
-  moveLead(leadId: string, newStatus: LeadStatus) {
-    const lead = this.leads().find(l => l.id === leadId);
-    if (!lead) return;
-    
-    this.leads.update(leads => leads.map(l => l.id === leadId ? { ...l, status: newStatus } : l));
-
-    if (newStatus === 'Fechado') {
-      const newProductId = this.addProduct({
-        name: `Projeto: ${lead.company}`,
-        stage: 'Ideação',
-        version: 'v0.1.0',
-        revenue: lead.value,
-        nextAction: 'Kickoff técnico'
-      });
-      
-      this.addTask({
-        title: `Setup Inicial & Kickoff: ${lead.company}`,
-        description: `Dossiê: ${lead.investigation.notes}`,
-        type: 'Feature',
-        points: 5,
-        status: 'A Fazer',
-        tag: 'Onboarding',
-        linkedProductId: newProductId
-      });
+    if (newTaskId) {
+      await this.supabase.from('tickets').update({ 
+        status: 'Aguardando Dev', 
+        linked_task_id: newTaskId 
+      }).eq('id', ticketId);
     }
   }
 
-  moveTask(taskId: string, newStatus: TaskStatus) {
-    this.tasks.update(tasks => tasks.map(t => t.id === taskId ? { ...t, status: newStatus } : t));
+  // --- ACTIONS ---
+  async moveLead(leadId: string, newStatus: LeadStatus) {
+    await this.supabase.from('leads').update({ status: newStatus }).eq('id', leadId);
+
+    if (newStatus === 'Fechado') {
+      const lead = this.leads().find(l => l.id === leadId);
+      if (lead) {
+        const newProductId = await this.addProduct({
+          name: `Projeto: ${lead.company}`,
+          stage: 'Ideação',
+          version: 'v0.1.0',
+          revenue: lead.value,
+          nextAction: 'Kickoff técnico'
+        });
+        
+        if (newProductId) {
+          await this.addTask({
+            title: `Setup Inicial & Kickoff: ${lead.company}`,
+            description: `Dossiê: ${lead.investigation.notes}`,
+            type: 'Feature',
+            points: 5,
+            status: 'A Fazer',
+            tag: 'Onboarding',
+            linkedProductId: newProductId
+          });
+        }
+      }
+    }
+  }
+
+  async moveTask(taskId: string, newStatus: TaskStatus) {
+    await this.supabase.from('tasks').update({ status: newStatus }).eq('id', taskId);
   }
 
   getProductName(id: string): string {
     return this.products().find(p => p.id === id)?.name || 'Produto Desconhecido';
   }
 
-  sendMessage(content: string, senderName: string, isPrivate: boolean = false) {
-    const newMessage: Message = { id: 'msg' + Date.now(), senderId: senderName.includes('CEO') ? 'ceo' : senderName.toLowerCase().replace(' ', ''), senderName, content, timestamp: new Date(), isPrivate };
-    this.messages.update(prev => [...prev, newMessage]);
+  async sendMessage(content: string, senderName: string, isPrivate: boolean = false) {
+    const senderId = senderName.includes('CEO') ? 'ceo' : senderName.toLowerCase().replace(' ', '');
+    await this.supabase.from('messages').insert([{
+      sender_id: senderId,
+      sender_name: senderName,
+      content,
+      is_private: isPrivate
+    }]);
   }
 
-  // Gamification & Agents
-  addXP(memberId: string, amount: number) {
-    this.squads.update(squads => squads.map(s => {
-      const memberIndex = s.members.findIndex(m => m.id === memberId);
-      if (memberIndex > -1) {
-        const members = [...s.members];
-        const m = members[memberIndex];
-        let newXp = m.xp + amount;
-        let newLevel = m.level;
-        if (newXp >= newLevel * 1000) {
-          newLevel++;
-          // Level up!
-        }
-        members[memberIndex] = { ...m, xp: newXp, level: newLevel };
-        return { ...s, members };
+  async addXP(memberId: string, amount: number) {
+    const { data } = await this.supabase.from('squad_members').select('*').eq('id', memberId).single();
+    if (data) {
+      let newXp = data.xp + amount;
+      let newLevel = data.level;
+      if (newXp >= newLevel * 1000) {
+        newLevel++;
       }
-      return s;
-    }));
+      await this.supabase.from('squad_members').update({ xp: newXp, level: newLevel }).eq('id', memberId);
+    }
   }
 
   clearAllData() {

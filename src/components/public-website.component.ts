@@ -43,7 +43,7 @@ import { DataService } from '../services/data.service';
             Construindo o futuro<br>linha por linha.
           </h1>
           <p class="text-lg text-zinc-400 mb-12 max-w-2xl mx-auto leading-relaxed font-medium">
-            Transformamos complexidade em sistemas elegantes. Sites Inteligentes, SaaS, CRMs Personalizados e Automação com IA de ponta a ponta.
+            Transformamos complexidade em sistemas elegantes. Landing Pages, Sites Premium e Agentes de IA que trabalham por você.
           </p>
           <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
             <a href="#contact" class="px-8 py-4 bg-white text-black text-xs font-black uppercase tracking-widest rounded-xl hover:bg-zinc-200 transition-colors w-full sm:w-auto shadow-xl shadow-white/10">
@@ -61,34 +61,37 @@ import { DataService } from '../services/data.service';
         <div class="max-w-7xl mx-auto">
           <h2 class="text-4xl font-black mb-20 text-center tracking-tighter">O Ecossistema Konig</h2>
           
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+            <!-- Site/LP Card -->
             <div class="p-10 bg-zinc-900/30 border border-zinc-800 rounded-3xl hover:border-emerald-500/50 transition-colors group">
               <div class="w-14 h-14 bg-emerald-900/20 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform">
                 <svg class="w-7 h-7 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
               </div>
-              <h3 class="text-xl font-bold mb-4">Plataformas de Conversão</h3>
+              <h3 class="text-xl font-bold mb-4 uppercase tracking-tighter">Sites & Landing Pages</h3>
               <p class="text-zinc-400 leading-relaxed text-sm">
-                Não apenas sites bonitos. Landing pages integradas com CRMs, pagamentos, agendamentos e áreas de membros. Design premium e performance extrema.
+                Landing Pages de alta conversão e Sites Institucionais Premium. Design sob medida focado em autoridade e vendas.
               </p>
             </div>
 
+            <!-- Features Card -->
             <div class="p-10 bg-zinc-900/30 border border-zinc-800 rounded-3xl hover:border-indigo-500/50 transition-colors group">
               <div class="w-14 h-14 bg-indigo-900/20 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform">
-                <svg class="w-7 h-7 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
+                <svg class="w-7 h-7 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
               </div>
-              <h3 class="text-xl font-bold mb-4">Sistemas Complexos (SaaS)</h3>
+              <h3 class="text-xl font-bold mb-4 uppercase tracking-tighter">Sistemas com Agendamento</h3>
               <p class="text-zinc-400 leading-relaxed text-sm">
-                Tiramos sua ideia do papel. Desenvolvimento full-cycle de SaaS e CRMs (como este próprio Nexus OS que você está usando).
+                Funcionalidades específicas para o seu negócio: agendadores para clínicas, barbearias e consultorias integrados ao seu site.
               </p>
             </div>
 
+            <!-- AI Agents Card -->
             <div class="p-10 bg-zinc-900/30 border border-zinc-800 rounded-3xl hover:border-purple-500/50 transition-colors group">
               <div class="w-14 h-14 bg-purple-900/20 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform">
                 <svg class="w-7 h-7 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
               </div>
-              <h3 class="text-xl font-bold mb-4">Agentes & IA</h3>
+              <h3 class="text-xl font-bold mb-4 uppercase tracking-tighter">Agentes de IA & Automação</h3>
               <p class="text-zinc-400 leading-relaxed text-sm">
-                Automatize sua operação. Criamos agentes de IA que atendem via WhatsApp, analisam planilhas e gerenciam seu financeiro enquanto você foca no crescimento.
+                O próximo nível. Não são bots de chat burros, são <strong>Agentes Inteligentes</strong> que entendem seu negócio, buscam dados e executam processos sozinhos.
               </p>
             </div>
           </div>
@@ -99,13 +102,13 @@ import { DataService } from '../services/data.service';
       <section id="contact" class="py-32 px-6 bg-[radial-gradient(ellipse_at_bottom,_var(--tw-gradient-stops))] from-indigo-900/10 via-zinc-950 to-zinc-950 border-t border-zinc-900">
         <div class="max-w-4xl mx-auto">
           <div class="text-center mb-16">
-            <h2 class="text-4xl font-black mb-4 tracking-tighter">Inicie um Projeto</h2>
+            <h2 class="text-4xl font-black mb-4 tracking-tighter">O que vamos construir?</h2>
             <p class="text-zinc-400">
-              Transforme sua ideia em tecnologia palpável. Preencha os dados e nosso time entrará em contato.
+              Escolha a solução ideal para o momento da sua empresa.
             </p>
           </div>
 
-          <form (submit)="submitLead($event)" class="bg-zinc-900/30 p-10 rounded-[2rem] border border-zinc-800 backdrop-blur-sm">
+          <form (submit)="submitLead($event)" class="bg-zinc-900/30 p-10 rounded-[2rem] border border-zinc-800 backdrop-blur-sm shadow-2xl">
             @if (successMessage()) {
               <div class="mb-8 p-6 bg-emerald-900/20 border border-emerald-500/30 rounded-2xl text-emerald-400 text-center text-sm animate-in fade-in slide-in-from-top-2 flex flex-col items-center justify-center gap-3">
                 <div class="w-10 h-10 bg-emerald-500/20 rounded-full flex items-center justify-center">
@@ -118,49 +121,43 @@ import { DataService } from '../services/data.service';
             <div class="space-y-8">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
-                  <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-3">Nome ou Empresa</label>
+                  <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-3">Sua Empresa</label>
                   <input name="company" [(ngModel)]="form.company" required class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-sm text-white focus:border-indigo-500 outline-none transition-colors">
                 </div>
                 <div>
-                  <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-3">Seu Nome (Contato)</label>
-                  <input name="contact" [(ngModel)]="form.contact" required class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-sm text-white focus:border-indigo-500 outline-none transition-colors">
+                  <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-3">Solução Desejada</label>
+                  <select name="solution" [(ngModel)]="form.solution" required class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-sm text-white focus:border-indigo-500 outline-none transition-colors appearance-none">
+                    <option value="Landing Page">Landing Page (Alta Conversão)</option>
+                    <option value="Site Institucional">Site Institucional Premium</option>
+                    <option value="Sistema com Agendamento">Sistema com Agendamento</option>
+                    <option value="Automação de Processos">Automação de Processos</option>
+                    <option value="Agente de IA Corporativo">Agente de IA Corporativo</option>
+                  </select>
                 </div>
               </div>
 
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div>
-                  <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-3">E-mail Corporativo</label>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="md:col-span-1">
+                  <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-3">Seu Nome</label>
+                  <input name="contact" [(ngModel)]="form.contact" required class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-sm text-white focus:border-indigo-500 outline-none transition-colors">
+                </div>
+                <div class="md:col-span-1">
+                  <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-3">E-mail</label>
                   <input type="email" name="email" [(ngModel)]="form.email" required class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-sm text-white focus:border-indigo-500 outline-none transition-colors">
                 </div>
-                <div>
+                <div class="md:col-span-1">
                   <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-3">WhatsApp</label>
                   <input name="phone" [(ngModel)]="form.phone" required class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-sm text-white focus:border-indigo-500 outline-none transition-colors">
                 </div>
               </div>
 
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div>
-                  <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-3">Orçamento Estimado</label>
-                  <select name="budget" [(ngModel)]="form.budgetRange" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-sm text-white focus:border-indigo-500 outline-none transition-colors appearance-none">
-                    <option value="Até R$ 5.000">Até R$ 5.000</option>
-                    <option value="R$ 5.000 a R$ 15.000">R$ 5.000 a R$ 15.000</option>
-                    <option value="R$ 15.000 a R$ 50.000">R$ 15.000 a R$ 50.000</option>
-                    <option value="Acima de R$ 50.000">Acima de R$ 50.000</option>
-                  </select>
-                </div>
-                <div>
-                  <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-3">Setor</label>
-                  <input name="industry" [(ngModel)]="form.industry" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-sm text-white focus:border-indigo-500 outline-none transition-colors" placeholder="Ex: E-commerce, Clínica, Advocacia">
-                </div>
-              </div>
-
               <div>
-                <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-3">Conte sobre o seu Projeto</label>
-                <textarea name="notes" [(ngModel)]="form.notes" required rows="5" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-sm text-white focus:border-indigo-500 outline-none transition-colors resize-none" placeholder="O que você precisa automatizar ou construir?"></textarea>
+                <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-3">Conte seu desafio</label>
+                <textarea name="notes" [(ngModel)]="form.notes" required rows="4" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-sm text-white focus:border-indigo-500 outline-none transition-colors resize-none" placeholder="O que você precisa automatizar ou construir?"></textarea>
               </div>
 
-              <button type="submit" class="w-full py-5 bg-white hover:bg-zinc-200 text-black text-[10px] uppercase tracking-widest font-black rounded-xl transition-all shadow-xl shadow-white/5">
-                Enviar Proposta para a Konig
+              <button type="submit" class="w-full py-5 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] uppercase tracking-widest font-black rounded-xl transition-all shadow-xl shadow-indigo-500/20 active:scale-[0.98]">
+                Enviar para a Konig Systems
               </button>
             </div>
           </form>
@@ -170,7 +167,7 @@ import { DataService } from '../services/data.service';
       <!-- Footer -->
       <footer class="py-16 bg-zinc-950 border-t border-zinc-900 text-center">
         <p class="text-zinc-600 text-[10px] font-black uppercase tracking-widest mb-4">© 2024 Konig Systems. Todos os direitos reservados.</p>
-        <button (click)="support.emit()" class="text-indigo-500 hover:text-indigo-400 text-xs font-bold underline">Portal de Suporte ao Cliente</button>
+        <button (click)="support.emit()" class="text-indigo-500 hover:text-indigo-400 text-xs font-bold underline">Área do Cliente (Acesso ao Suporte)</button>
       </footer>
     </div>
   `,
@@ -191,8 +188,7 @@ export class PublicWebsiteComponent {
     contact: '',
     email: '',
     phone: '',
-    budgetRange: 'R$ 5.000 a R$ 15.000',
-    industry: '',
+    solution: 'Landing Page',
     notes: ''
   };
 
@@ -211,19 +207,19 @@ export class PublicWebsiteComponent {
       status: 'Lead',
       source: 'Site Publico',
       investigation: {
-        industry: this.form.industry,
+        industry: 'Pendente',
         companySize: 'Desconhecido',
         painPoints: '',
         techStack: '',
-        budgetRange: this.form.budgetRange,
+        budgetRange: 'A Definir',
         decisionMaker: this.form.contact,
-        notes: this.form.notes
+        notes: `Interessado em: ${this.form.solution}. \nObs: ${this.form.notes}`
       }
     });
 
-    this.successMessage.set(`Recebemos sua solicitação! Um consultor da Konig Systems entrará em contato em breve.`);
+    this.successMessage.set(`Recebemos sua solicitação! A Ana SDR entrará em contato via WhatsApp em breve.`);
     
-    this.form = { company: '', contact: '', email: '', phone: '', budgetRange: 'R$ 5.000 a R$ 15.000', industry: '', notes: '' };
+    this.form = { company: '', contact: '', email: '', phone: '', solution: 'Landing Page', notes: '' };
     setTimeout(() => this.successMessage.set(''), 6000);
   }
 }
