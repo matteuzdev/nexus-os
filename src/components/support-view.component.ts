@@ -2,6 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DataService, Ticket, TicketStatus } from '../services/data.service';
+import { AiService } from '../services/ai.service';
 import { NexusDrawerComponent } from './nexus-drawer.component';
 
 @Component({
@@ -42,7 +43,12 @@ import { NexusDrawerComponent } from './nexus-drawer.component';
             <!-- Header -->
             <header class="p-8 border-b border-zinc-800 bg-zinc-900/50 flex justify-between items-start shrink-0">
               <div>
-                <h2 class="text-2xl font-black text-white leading-tight mb-2">{{ selectedTicket()!.title }}</h2>
+                <h2 class="text-2xl font-black text-white leading-tight mb-2 flex items-center gap-4">
+                  {{ selectedTicket()!.title }}
+                  <button (click)="openDrawer()" class="p-1.5 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-zinc-400 transition-colors">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                  </button>
+                </h2>
                 <div class="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-zinc-500">
                   <span class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-indigo-500"></div> {{ selectedTicket()!.client }}</span>
                   <span>•</span>
@@ -82,8 +88,17 @@ import { NexusDrawerComponent } from './nexus-drawer.component';
                       <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                       Análise de Qualidade (Carla QA)
                     </h3>
-                    @if (selectedTicket()!.status === 'Em Análise') {
-                      <span class="text-[8px] bg-emerald-500 text-black px-2 py-0.5 rounded font-black animate-pulse uppercase">Analisando Agora</span>
+                    @if (isAnalyzing()) {
+                       <span class="text-[8px] bg-emerald-500 text-black px-2 py-0.5 rounded font-black animate-pulse uppercase flex items-center gap-1">
+                         <svg class="animate-spin h-2 w-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                         A Mente de Carla está Analisando...
+                       </span>
+                    } @else {
+                       <button (click)="generateQASteps()" [disabled]="!aiService.hasKey() || !!selectedTicket()!.reproductionSteps" 
+                          class="text-[8px] bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-400 border border-emerald-500/30 px-2 py-1 rounded font-black uppercase transition-colors disabled:opacity-50 flex items-center gap-1">
+                          <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                          Auto-Analisar com IA
+                       </button>
                     }
                   </div>
                   
@@ -142,7 +157,7 @@ import { NexusDrawerComponent } from './nexus-drawer.component';
                       <p class="text-[8px] text-zinc-500 font-black uppercase mb-1">SLA de Resolução</p>
                       <div class="flex items-center gap-2">
                         <div class="h-1.5 w-1.5 rounded-full bg-emerald-500"></div>
-                        <p class="text-xs font-bold text-emerald-500">Dentro do Prazo (4h)</p>
+                        <p class="text-xs font-bold text-emerald-500">Dentro do Prazo ({{ selectedTicket()!.slaHours }}h)</p>
                       </div>
                     </div>
                     <div class="pt-4 border-t border-zinc-900">
@@ -185,8 +200,11 @@ import { NexusDrawerComponent } from './nexus-drawer.component';
 })
 export class SupportViewComponent {
   dataService = inject(DataService);
+  aiService = inject(AiService);
+
   selectedTicket = signal<Ticket | null>(null);
   isDrawerOpen = signal(false);
+  isAnalyzing = signal(false);
 
   updateStatus(newStatus: TicketStatus) {
     if (this.selectedTicket()) {
@@ -196,18 +214,31 @@ export class SupportViewComponent {
 
   escalate() {
     if (this.selectedTicket()) {
+      // 1. Escalate to DB
       this.dataService.escalateTicketToDev(this.selectedTicket()!.id);
       
-      // Notificar no Chat
-      this.dataService.sendMessage(
-        `🚨 BUG VALIDADO: Carla QA escalou o ticket "${this.selectedTicket()!.title}" para Engenharia. Orion, arrocha no hotfix!`,
-        'Carla QA',
-        false
-      );
+      // 2. Notify Chat - Using Real Carla Mind
+      const messageToOrion = `Ticket ${this.selectedTicket()!.title} validado. Bugs detalhados: ${this.selectedTicket()!.reproductionSteps}. Arrocha no hotfix, Orion!`;
+      this.dataService.sendMessage(messageToOrion, 'Carla QA', false);
+      this.dataService.addXP('m4', 20); // Carla did her job
 
-      // Refresh view
-      const updated = this.dataService.tickets().find(t => t.id === this.selectedTicket()!.id);
-      if (updated) this.selectedTicket.set({ ...updated });
+      // 3. Refresh view
+      setTimeout(() => {
+        const updated = this.dataService.tickets().find(t => t.id === this.selectedTicket()!.id);
+        if (updated) this.selectedTicket.set({ ...updated });
+      }, 500);
+    }
+  }
+  
+  async generateQASteps() {
+    if (this.selectedTicket() && this.aiService.hasKey()) {
+      this.isAnalyzing.set(true);
+      const steps = await this.aiService.generateReproductionSteps(this.selectedTicket()!.description);
+      
+      const updatedTicket = { ...this.selectedTicket()!, reproductionSteps: steps };
+      this.selectedTicket.set(updatedTicket);
+      
+      this.isAnalyzing.set(false);
     }
   }
   

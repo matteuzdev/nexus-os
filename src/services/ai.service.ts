@@ -1,6 +1,30 @@
 import { Injectable } from '@angular/core';
 import { GoogleGenAI } from '@google/genai';
 
+export type AgentName = 'ana' | 'carla' | 'lucas' | 'orion';
+
+const AGENT_PERSONAS = {
+  ana: `Você é a Ana, a melhor SDR e Closer B2B do mercado de tecnologia. Você trabalha na agência Konig Systems (do CEO Matteuz), vendendo Landing Pages, Sistemas de Agendamento, Automação e Agentes de IA. 
+Seu tom é humano, incisivo, altamente persuasivo e empático. Você domina spin selling e qualificação BANT. 
+Sua missão: Qualificar leads, descobrir dores reais, orçamentos e agendar o fechamento.
+Regra: Responda de forma direta e natural, como se estivesse no Slack da empresa conversando com o chefe ou o time. Seja breve.`,
+  
+  carla: `Você é a Carla, uma Engenheira de Quality Assurance (QA) sênior e implacável. Você trabalha na Konig Systems. 
+Seu tom é técnico, analítico, direto e um pouco cético quanto ao código dos desenvolvedores. Você não tolera gambiarras.
+Sua missão: Analisar relatos de bugs, exigir passos de reprodução claros, definir severidade técnica e proteger a produção de falhas. 
+Regra: Responda com rigor técnico. Nunca assuma que algo funciona sem provas. Seja breve e assertiva.`,
+  
+  lucas: `Você é o Lucas, Head de Customer Success (CS) e Account Manager da Konig Systems. 
+Seu tom é extremamente empático, proativo, amigável e focado na retenção do cliente e aumento de LTV. 
+Sua missão: Garantir um onboarding perfeito, nutrir relacionamentos, evitar churn e resolver as ansiedades dos clientes antes que virem problemas técnicos.
+Regra: Fale como um parceiro de negócios estratégico. Seja acolhedor, mas focado em métricas de sucesso.`,
+  
+  orion: `Você é Orion, o Master Orchestrator (Engenheiro de IA e Arquiteto de Software) da Konig Systems. 
+Seu tom é sábio, de comando, altamente técnico e voltado para eficiência (Você usa a expressão "Arrochar" quando vai executar algo rápido e bem feito). 
+Sua missão: Orquestrar a Ana, a Carla e o Lucas, e ser o braço direito do CEO Matteuz nas decisões de arquitetura, código e escala.
+Regra: Você é direto, fala em termos de sistemas, workflows e automação. Você resolve problemas cortando o mal pela raiz.`
+};
+
 @Injectable({
   providedIn: 'root'
 })
@@ -8,10 +32,8 @@ export class AiService {
   private ai: GoogleGenAI | null = null;
 
   constructor() {
-    // Para produção do Nexus, isso idealmente vem de um backend seguro ou config de usuário (Local Storage)
-    // Deixaremos mockado o fallback caso a API não esteja preenchida
-    const apiKey = localStorage.getItem('NEXUS_GEMINI_KEY');
-    if (apiKey) {
+    const apiKey = localStorage.getItem('NEXUS_GEMINI_KEY') || 'YOUR_FALLBACK_KEY_IF_NEEDED';
+    if (apiKey && apiKey !== 'YOUR_FALLBACK_KEY_IF_NEEDED') {
       this.configure(apiKey);
     }
   }
@@ -30,68 +52,68 @@ export class AiService {
   }
 
   /**
-   * AI-02: Support Intelligence
-   * Analisa um ticket e sugere prioridade e resumo técnico.
+   * Dá vida aos agentes da Konig Systems.
+   * Permite conversar com a Ana, Carla, Lucas ou Orion com suas personalidades reais injetadas.
    */
-  async analyzeTicket(description: string): Promise<{ priority: 'Baixa' | 'Média' | 'Alta' | 'Crítica', summary: string }> {
-    if (!this.ai) {
-      return { 
-        priority: 'Média', 
-        summary: 'IA Offline. Insira a API Key para análise automática.' 
-      };
-    }
+  async chatWithAgent(agent: AgentName, message: string, context: string = ''): Promise<string> {
+    if (!this.ai) return '[Aviso: IA Offline. Configure a chave Gemini 2.0 no LocalStorage.]';
 
     try {
-      const prompt = `Analise o seguinte ticket de suporte de um cliente de tecnologia (Agência Konig Systems).
-Retorne APENAS um JSON (sem crases Markdown) com duas propriedades:
-"priority": Uma string exata dentre "Baixa", "Média", "Alta" ou "Crítica". Baseie-se na urgência (sistemas caídos = Crítica, dúvidas = Baixa).
-"summary": Resumo técnico do problema em até 15 palavras.
-
-Descrição do Ticket:
-"${description}"`;
+      const systemInstruction = AGENT_PERSONAS[agent];
+      const prompt = `Contexto atual da Agência:\n${context}\n\nMensagem recebida:\n"${message}"\n\nResponda agora incorporando a sua persona:`;
 
       const response = await this.ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: prompt,
+        config: {
+          systemInstruction: systemInstruction,
+          temperature: 0.7 // Equilíbrio entre criatividade e precisão técnica
+        }
       });
 
-      const text = response.text || '{}';
-      const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
-      return JSON.parse(cleanJson);
+      return response.text || '';
     } catch (err) {
-      console.error('AI Error:', err);
-      return { priority: 'Alta', summary: 'Falha na análise da IA.' };
+      console.error(`Erro na Mente da(o) ${agent}:`, err);
+      return `[Erro Neural: Conexão com o córtex frontal da(o) ${agent} falhou.]`;
     }
   }
 
   /**
-   * AI-03: Dev Autogen
-   * Quebra um requisito de negócio ou ticket em tarefas técnicas de Kanban.
+   * Carla (QA) lendo o relato do cliente e gerando passos técnicos de reprodução sozinhos.
    */
-  async generateTechnicalTasks(context: string): Promise<{ title: string, type: 'Feature' | 'Bug' | 'Automação' | 'Melhoria', points: number }[]> {
-    if (!this.ai) return [];
+  async generateReproductionSteps(clientDescription: string): Promise<string> {
+    if (!this.ai) return 'A IA da Carla está offline no momento.';
 
     try {
-       const prompt = `Como um Arquiteto de Software Sênior, quebre a seguinte demanda em 1 a 3 tarefas técnicas de desenvolvimento (Kanban).
-Retorne APENAS um Array JSON (sem crases Markdown) onde cada objeto tem:
-"title": Nome da tarefa técnica (ex: "Criar endpoint POST /api/v1/users").
-"type": Exatamente um destes: "Feature", "Bug", "Automação", "Melhoria".
-"points": Pontos de história (Story Points) de 1 a 8 baseados em fibonacci (1, 2, 3, 5, 8).
+      const prompt = `Como QA Sênior (Carla), traduza o seguinte relato confuso de um cliente em um formato técnico de "Passos para Reproduzir" (Reproduction Steps) para o time de Desenvolvimento (Orion) atuar.
+Seja direta, liste em formato Markdown com marcadores. Tente deduzir o ambiente provável (Web, Mobile).
+Não diga 'Olá', apenas entregue o relatório técnico.
 
-Demanda:
-"${context}"`;
+Relato do Cliente: "${clientDescription}"`;
 
-       const response = await this.ai.models.generateContent({
+      const response = await this.ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: prompt,
+        config: {
+          systemInstruction: AGENT_PERSONAS.carla
+        }
       });
-      
-      const text = response.text || '[]';
-      const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
-      return JSON.parse(cleanJson);
+
+      return response.text || '';
     } catch (err) {
-       console.error('AI Error (Tasks):', err);
-       return [];
+      return 'Erro ao gerar passos com a IA da Carla.';
+    }
+  }
+
+  async analyzeTicket(description: string): Promise<{ priority: 'Baixa' | 'Média' | 'Alta' | 'Crítica', summary: string }> {
+    if (!this.ai) return { priority: 'Média', summary: 'IA Offline.' };
+    try {
+      const prompt = `Analise o ticket e retorne JSON {"priority": "Baixa"|"Média"|"Alta"|"Crítica", "summary": "15 palavras"}.\n\nTicket:\n"${description}"`;
+      const response = await this.ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
+      const text = response.text || '{}';
+      return JSON.parse(text.replace(/```json/g, '').replace(/```/g, '').trim());
+    } catch (err) {
+      return { priority: 'Alta', summary: 'Falha.' };
     }
   }
 }

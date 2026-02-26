@@ -2,6 +2,7 @@ import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DataService, Member, Squad, Message } from '../services/data.service';
+import { AiService, AgentName } from '../services/ai.service';
 
 @Component({
   selector: 'app-squads-view',
@@ -93,10 +94,21 @@ import { DataService, Member, Squad, Message } from '../services/data.service';
                 <span class="text-[10px] font-black uppercase tracking-tighter" [class]="msg.senderId === 'ceo' ? 'text-indigo-400' : 'text-emerald-400'">{{ msg.senderName }}</span>
                 <span class="text-[8px] text-zinc-700 font-mono">{{ msg.timestamp | date:'HH:mm' }}</span>
               </div>
-              <div class="p-4 rounded-2xl text-sm leading-relaxed max-w-[95%] shadow-sm border"
+              <div class="p-4 rounded-2xl text-sm leading-relaxed max-w-[95%] shadow-sm border whitespace-pre-wrap"
                 [class]="msg.senderId === 'ceo' ? 'bg-indigo-600/10 border-indigo-500/20 text-indigo-100 rounded-tl-none ml-2' : 'bg-zinc-900 border-zinc-800 text-zinc-300 rounded-tl-none ml-2'">
                 {{ msg.content }}
               </div>
+            </div>
+          }
+          
+          @if (isThinking()) {
+            <div class="flex items-center gap-3 text-zinc-500 p-4">
+              <div class="flex space-x-1">
+                <div class="w-2 h-2 bg-indigo-500 rounded-full animate-bounce"></div>
+                <div class="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                <div class="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+              </div>
+              <span class="text-[10px] font-bold uppercase tracking-widest">{{ thinkingAgent }} está processando...</span>
             </div>
           }
         </div>
@@ -105,10 +117,10 @@ import { DataService, Member, Squad, Message } from '../services/data.service';
         <div class="p-6 border-t border-zinc-800 bg-zinc-900/50 shrink-0">
           <form (submit)="send($event)" class="relative group">
             <div class="absolute inset-0 bg-indigo-500/5 blur-xl group-focus-within:bg-indigo-500/10 transition-all rounded-full"></div>
-            <input name="chatInput" [(ngModel)]="newMessage" 
-              class="relative w-full bg-zinc-950 border border-zinc-800 rounded-2xl p-4 pr-14 text-sm text-white focus:border-indigo-500 outline-none transition-all placeholder:text-zinc-800 font-medium"
-              [placeholder]="chatMode() === 'private' ? 'Comando privado para Orion...' : 'Falar com o squad...'">
-            <button type="submit" class="absolute right-3 top-2.5 p-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-500 transition-all active:scale-90 shadow-lg shadow-indigo-500/20">
+            <input name="chatInput" [(ngModel)]="newMessage" [disabled]="isThinking() || !aiService.hasKey()"
+              class="relative w-full bg-zinc-950 border border-zinc-800 rounded-2xl p-4 pr-14 text-sm text-white focus:border-indigo-500 outline-none transition-all placeholder:text-zinc-800 font-medium disabled:opacity-50"
+              [placeholder]="aiService.hasKey() ? (chatMode() === 'private' ? 'Comando privado para Orion...' : 'Falar com o squad... Mencione @Ana, @Carla ou @Lucas') : 'Insira a GEMINI_KEY no LocalStorage para conversar.'">
+            <button type="submit" [disabled]="isThinking() || !aiService.hasKey()" class="absolute right-3 top-2.5 p-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-500 transition-all active:scale-90 shadow-lg shadow-indigo-500/20 disabled:opacity-50">
               <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
             </button>
           </form>
@@ -124,59 +136,81 @@ import { DataService, Member, Squad, Message } from '../services/data.service';
 })
 export class SquadsViewComponent {
   dataService = inject(DataService);
+  aiService = inject(AiService);
+  
   newMessage = '';
   chatMode = signal<'all' | 'private'>('private');
+  isThinking = signal(false);
+  thinkingAgent = '';
 
   filteredMessages = computed(() => {
     const isPrivate = this.chatMode() === 'private';
     return this.dataService.messages().filter(m => m.isPrivate === isPrivate);
   });
 
-  send(e: Event) {
+  async send(e: Event) {
     e.preventDefault();
-    if (!this.newMessage.trim()) return;
+    if (!this.newMessage.trim() || this.isThinking() || !this.aiService.hasKey()) return;
     
     const isPrivate = this.chatMode() === 'private';
     const sender = 'Matteuz (CEO)';
     const text = this.newMessage;
     
-    this.dataService.sendMessage(text, sender, isPrivate);
+    await this.dataService.sendMessage(text, sender, isPrivate);
     this.newMessage = '';
     
+    // Context to give AI awareness of the agency state
+    const activeTasks = this.dataService.tasks().filter(t => t.status === 'Em Progresso').length;
+    const leads = this.dataService.leads().length;
+    const openTickets = this.dataService.tickets().filter(t => t.status !== 'Resolvido').length;
+    const context = `Pipeline atual: ${leads} Leads. Tasks de Engenharia: ${activeTasks}. Chamados Abertos: ${openTickets}. CEO Matteuz está no comando.`;
+    
     if (!isPrivate) {
-      this.simulateSquadReply(text);
+      await this.triggerAgentMind(text, context);
     } else {
-      this.simulateOrionPrivateReply();
+      await this.chatWithOrion(text, context);
     }
   }
 
-  simulateSquadReply(message: string) {
+  async triggerAgentMind(message: string, context: string) {
     const text = message.toLowerCase();
     
-    setTimeout(() => {
-      if (text.includes('@ana') || text.includes('vendas') || text.includes('sdr')) {
-        this.dataService.sendMessage('Estou em cima disso, Matteuz! Prospecção a todo vapor.', 'Ana SDR', false);
-        this.dataService.addXP('m1', 10);
-      } else if (text.includes('@carla') || text.includes('qa') || text.includes('bug') || text.includes('suporte')) {
-        this.dataService.sendMessage('Testes a postos. Me passa o card que eu destruo os bugs 🐛.', 'Carla QA', false);
-        this.dataService.addXP('m4', 10);
-      } else if (text.includes('@orion') || text.includes('dev') || text.includes('codigo')) {
-        this.dataService.sendMessage('Sistemas estáveis e repositórios sincronizados. O código está cantando.', 'Orion', false);
-      } else {
-        const replies = [
-          { name: 'Ana SDR', msg: 'Anotado, chefe!' },
-          { name: 'Carla QA', msg: 'Monitorando por aqui.' },
-          { name: 'Lucas CS', msg: 'CS a postos, precisando é só chamar.' }
-        ];
-        const random = replies[Math.floor(Math.random() * replies.length)];
-        this.dataService.sendMessage(random.msg, random.name, false);
-      }
-    }, 1200);
+    // Detect Who to call
+    let agentToCall: AgentName | null = null;
+    let agentName = '';
+    let xpTarget = '';
+    
+    if (text.includes('@ana') || text.includes('vendas') || text.includes('sdr') || text.includes('lead')) {
+      agentToCall = 'ana'; agentName = 'Ana SDR'; xpTarget = 'm1';
+    } else if (text.includes('@carla') || text.includes('qa') || text.includes('bug') || text.includes('suporte') || text.includes('erro')) {
+      agentToCall = 'carla'; agentName = 'Carla QA'; xpTarget = 'm4';
+    } else if (text.includes('@lucas') || text.includes('cs') || text.includes('cliente') || text.includes('onboarding')) {
+      agentToCall = 'lucas'; agentName = 'Lucas CS'; xpTarget = 'm2';
+    } else if (text.includes('@orion') || text.includes('dev') || text.includes('codigo') || text.includes('build')) {
+      agentToCall = 'orion'; agentName = 'Orion (AI)'; xpTarget = 'm3';
+    } else {
+      // Default to Orion orchestrating if no specific mention
+      agentToCall = 'orion'; agentName = 'Orion (AI)'; xpTarget = 'm3';
+    }
+
+    this.isThinking.set(true);
+    this.thinkingAgent = agentName;
+    
+    const response = await this.aiService.chatWithAgent(agentToCall, message, context);
+    await this.dataService.sendMessage(response, agentName, false);
+    
+    if (xpTarget) {
+      await this.dataService.addXP(xpTarget, 10);
+    }
+    
+    this.isThinking.set(false);
   }
 
-  simulateOrionPrivateReply() {
-    setTimeout(() => {
-      this.dataService.sendMessage('👑 Comando recebido, Matteuz. Orquestrando squads para prioridade total no seu pedido.', 'Orion', true);
-    }, 1000);
+  async chatWithOrion(message: string, context: string) {
+    this.isThinking.set(true);
+    this.thinkingAgent = 'Orion';
+    const response = await this.aiService.chatWithAgent('orion', message, context);
+    await this.dataService.sendMessage(response, 'Orion', true);
+    this.isThinking.set(false);
   }
 }
