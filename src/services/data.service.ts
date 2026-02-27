@@ -114,6 +114,17 @@ export interface Message {
   isPrivate: boolean;
 }
 
+export interface Client {
+  id: string;
+  name: string;
+  email: string;
+  company: string;
+  status: 'Ativo' | 'Inativo' | 'Onboarding';
+  totalProjects: number;
+  openTickets: number;
+  lastActivity: Date;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -131,6 +142,7 @@ export class DataService {
   personalTasks = signal<PersonalTask[]>([]);
   squads = signal<Squad[]>([]);
   messages = signal<Message[]>([]);
+  clients = signal<Client[]>([]);
 
   constructor() {
     const supabaseUrl = 'https://qaxxorrgzdubxbckluzw.supabase.co';
@@ -153,7 +165,9 @@ export class DataService {
   private handleAuthSession(session: any) {
     if (session?.user) {
       this.currentUser.set(session.user);
-      const role = session.user.user_metadata?.['role'] || 'client';
+      // Override temporário para o CEO Matteuz ter acesso total
+      const isAdminEmail = session.user.email === 'hiantomateus@gmail.com';
+      const role = isAdminEmail ? 'admin' : (session.user.user_metadata?.['role'] || 'client');
       this.userRole.set(role as 'admin' | 'client');
     } else {
       this.currentUser.set(null);
@@ -220,7 +234,8 @@ export class DataService {
       this.fetchTickets(),
       this.fetchMessages(),
       this.fetchPersonalTasks(),
-      this.fetchSquads()
+      this.fetchSquads(),
+      this.fetchClients()
     ]);
   }
 
@@ -234,6 +249,15 @@ export class DataService {
   }
 
   // --- FETCHERS ---
+  private async fetchClients() {
+    const { data } = await this.supabase.from('clients').select('*').order('company', { ascending: true });
+    if (data) this.clients.set(data.map(c => ({ 
+      ...c, 
+      lastActivity: new Date(c.last_activity),
+      totalProjects: c.total_projects || 0,
+      openTickets: c.open_tickets || 0
+    })));
+  }
   private async fetchLeads() {
     const { data } = await this.supabase.from('leads').select('*').order('created_at', { ascending: false });
     if (data) this.leads.set(data.map(l => ({ 
@@ -594,8 +618,48 @@ export class DataService {
     }
   }
 
-  clearAllData() {
+  async clearAllData() {
     localStorage.clear();
     window.location.reload();
+  }
+
+  // --- CRUD: CLIENTS ---
+  async addClient(client: Omit<Client, 'id' | 'lastActivity' | 'totalProjects' | 'openTickets'>) {
+    await this.supabase.from('clients').insert([{
+      name: client.name,
+      email: client.email,
+      company: client.company,
+      status: client.status || 'Onboarding',
+      last_activity: new Date()
+    }]);
+  }
+
+  async updateClient(client: Client) {
+    const { id, ...data } = client;
+    await this.supabase.from('clients').update({
+      name: data.name,
+      email: data.email,
+      company: data.company,
+      status: data.status,
+      last_activity: new Date()
+    }).eq('id', id);
+  }
+
+  async deleteClient(id: string) {
+    await this.supabase.from('clients').delete().eq('id', id);
+  }
+
+  // Sobrescrita do addTicket para incluir auto-criação de cliente
+  async addTicketAndCheckClient(ticket: Omit<Ticket, 'id' | 'createdAt' | 'status'>) {
+    const existingClient = this.clients().find(c => c.company.toLowerCase() === ticket.client.toLowerCase());
+    if (!existingClient) {
+      await this.addClient({
+        name: 'Contato via Chamado',
+        email: ticket.clientEmail || '',
+        company: ticket.client,
+        status: 'Ativo'
+      });
+    }
+    await this.addTicket(ticket);
   }
 }

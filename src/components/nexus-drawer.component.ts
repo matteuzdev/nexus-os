@@ -1,7 +1,7 @@
 import { Component, inject, signal, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { DataService, Lead, Task, Ticket } from '../services/data.service';
+import { DataService, Lead, Task, Ticket, Client } from '../services/data.service';
 
 @Component({
   selector: 'app-nexus-drawer',
@@ -36,10 +36,39 @@ import { DataService, Lead, Task, Ticket } from '../services/data.service';
             <!-- Content -->
             <div class="flex-1 overflow-y-auto p-8 custom-scrollbar space-y-10">
               
-              <!-- Lead Specific: Standard CRM Fields -->
+              <!-- Client Specific -->
+              @if (type === 'client') {
+                <div class="space-y-8">
+                  <div class="grid grid-cols-1 gap-6 p-6 bg-zinc-900/50 border border-zinc-800 rounded-2xl">
+                    <div>
+                      <label class="text-[10px] text-zinc-500 uppercase font-bold block mb-1">Nome da Empresa</label>
+                      <input [(ngModel)]="asClient().company" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-sm text-white outline-none focus:border-indigo-500">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                      <div>
+                        <label class="text-[10px] text-zinc-500 uppercase font-bold block mb-1">Nome do Contato</label>
+                        <input [(ngModel)]="asClient().name" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-sm text-white outline-none focus:border-indigo-500">
+                      </div>
+                      <div>
+                        <label class="text-[10px] text-zinc-500 uppercase font-bold block mb-1">Status</label>
+                        <select [(ngModel)]="asClient().status" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-sm text-white outline-none focus:border-indigo-500 appearance-none">
+                          <option value="Ativo">Ativo</option>
+                          <option value="Inativo">Inativo</option>
+                          <option value="Onboarding">Onboarding</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label class="text-[10px] text-zinc-500 uppercase font-bold block mb-1">E-mail</label>
+                      <input [(ngModel)]="asClient().email" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-sm text-white outline-none focus:border-indigo-500">
+                    </div>
+                  </div>
+                </div>
+              }
+
+              <!-- Lead Specific -->
               @if (type === 'lead') {
                 <div class="space-y-8">
-                  <!-- Contact Info & Automation -->
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-zinc-900/50 border border-zinc-800 rounded-2xl">
                     <div class="space-y-4">
                       <div>
@@ -216,29 +245,33 @@ export class NexusDrawerComponent {
   dataService = inject(DataService);
 
   @Input() isOpen = false;
-  @Input() type: 'lead' | 'task' | 'ticket' = 'lead';
+  @Input() type: 'lead' | 'task' | 'ticket' | 'client' = 'lead';
   @Input() data: any = null;
 
   @Output() close = new EventEmitter<void>();
 
   asLead() { return this.data as Lead; }
   asTask() { return this.data as Task; }
+  asClient() { return this.data as Client; }
 
   getTitle() {
     if (this.type === 'lead') return this.asLead().company;
     if (this.type === 'task') return this.asTask().title;
+    if (this.type === 'client') return this.asClient().company;
     return 'Detalhes';
   }
 
   save() {
     if (this.type === 'lead') this.dataService.updateLead(this.asLead());
     if (this.type === 'task') this.dataService.updateTask(this.asTask());
+    if (this.type === 'client') this.dataService.updateClient(this.asClient());
     this.close.emit();
   }
 
   delete() {
     if (!confirm(`Deseja realmente eliminar este registro da Konig Systems?`)) return;
     if (this.type === 'lead') this.dataService.deleteLead(this.data.id);
+    if (this.type === 'client') this.dataService.deleteClient(this.data.id);
     this.close.emit();
   }
 

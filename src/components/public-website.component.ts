@@ -25,7 +25,6 @@ import { DataService } from '../services/data.service';
           <div class="flex items-center gap-6">
             <a href="#services" class="text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-white transition-colors hidden md:block">Serviços</a>
             <a href="#contact" class="text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-white transition-colors hidden md:block">Projetos</a>
-            <button (click)="support.emit()" class="text-[10px] font-black uppercase tracking-widest text-indigo-400 hover:text-indigo-300 transition-colors hidden md:block">Abrir Chamado (Suporte)</button>
             <button (click)="login.emit()" class="px-6 py-2.5 bg-zinc-900 border border-zinc-800 hover:border-indigo-500 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all">
               Nexus OS Login
             </button>
@@ -167,7 +166,6 @@ import { DataService } from '../services/data.service';
       <!-- Footer -->
       <footer class="py-16 bg-zinc-950 border-t border-zinc-900 text-center">
         <p class="text-zinc-600 text-[10px] font-black uppercase tracking-widest mb-4">© 2024 Konig Systems. Todos os direitos reservados.</p>
-        <button (click)="support.emit()" class="text-indigo-500 hover:text-indigo-400 text-xs font-bold underline">Área do Cliente (Acesso ao Suporte)</button>
       </footer>
     </div>
   `,

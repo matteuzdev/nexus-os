@@ -13,8 +13,9 @@ import { PersonalViewComponent } from './components/personal-view.component';
 import { PublicSupportComponent } from './components/public-support.component';
 import { SettingsViewComponent } from './components/settings-view.component';
 import { UsersViewComponent } from './components/users-view.component';
+import { ClientsViewComponent } from './components/clients-view.component';
 
-type View = 'public' | 'public-support' | 'auth' | 'dashboard' | 'portfolio' | 'kanban' | 'support' | 'sales' | 'squads' | 'personal' | 'settings' | 'users';
+type View = 'public' | 'public-support' | 'auth' | 'dashboard' | 'portfolio' | 'kanban' | 'support' | 'sales' | 'squads' | 'personal' | 'settings' | 'users' | 'clients';
 
 @Component({
   selector: 'app-root',
@@ -32,7 +33,8 @@ type View = 'public' | 'public-support' | 'auth' | 'dashboard' | 'portfolio' | '
     PersonalViewComponent,
     PublicSupportComponent,
     SettingsViewComponent,
-    UsersViewComponent
+    UsersViewComponent,
+    ClientsViewComponent
   ],
   template: `
     @if (currentView() === 'public') {
@@ -80,6 +82,13 @@ type View = 'public' | 'public-support' | 'auth' | 'dashboard' | 'portfolio' | '
               Visão Geral
             </button>
 
+            <button (click)="currentView.set('clients')" 
+              class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all"
+              [class]="currentView() === 'clients' ? 'bg-zinc-800 text-white shadow-inner' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+              Gestão de Clientes
+            </button>
+
             <button (click)="currentView.set('sales')" 
               class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all"
               [class]="currentView() === 'sales' ? 'bg-zinc-800 text-white shadow-inner' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'">
@@ -122,7 +131,7 @@ type View = 'public' | 'public-support' | 'auth' | 'dashboard' | 'portfolio' | '
                   class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all"
                   [class]="currentView() === 'users' ? 'bg-indigo-600/10 text-indigo-400 border border-indigo-500/20' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'">
                   <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-                  Gestão de Acessos
+                  Colaboradores
                 </button>
               </div>
             }
@@ -154,13 +163,14 @@ type View = 'public' | 'public-support' | 'auth' | 'dashboard' | 'portfolio' | '
               @switch (currentView()) {
                 @case ('personal') { <span class="text-emerald-400">My Focus Space</span> }
                 @case ('dashboard') { Visão Geral }
+                @case ('clients') { Gestão de Clientes }
                 @case ('sales') { Funil de Vendas & CRM }
                 @case ('squads') { Squads & Gestão de Equipe }
                 @case ('portfolio') { Portfólio de Produtos }
                 @case ('kanban') { Board de Engenharia }
                 @case ('support') { Central de Suporte (QA) }
                 @case ('settings') { Minha Conta }
-                @case ('users') { Gestão de Acessos & CMS }
+                @case ('users') { Colaboradores }
               }
             </h2>
             <div class="flex items-center gap-4">
@@ -179,6 +189,7 @@ type View = 'public' | 'public-support' | 'auth' | 'dashboard' | 'portfolio' | '
             @switch (currentView()) {
               @case ('personal') { <app-personal-view class="animate-in fade-in slide-in-from-bottom-2 duration-500 h-full block"/> }
               @case ('dashboard') { <app-dashboard-view class="animate-in fade-in slide-in-from-bottom-2 duration-500"/> }
+              @case ('clients') { <app-clients-view class="animate-in fade-in slide-in-from-bottom-2 duration-500 h-full block"/> }
               @case ('sales') { <app-sales-view class="animate-in fade-in slide-in-from-bottom-2 duration-500 h-full block"/> }
               @case ('squads') { <app-squads-view class="animate-in fade-in slide-in-from-bottom-2 duration-500 h-full block"/> }
               @case ('portfolio') { <app-portfolio-view class="animate-in fade-in slide-in-from-bottom-2 duration-500 h-full block"/> }
@@ -210,16 +221,13 @@ export class AppComponent {
 
       if (user) {
         if (role === 'admin') {
-          // Se já estiver logado e tentar ir para auth ou public, vai pro dashboard
           if (this.currentView() === 'auth' || this.currentView() === 'public') {
             this.currentView.set('dashboard');
           }
         } else {
-          // Se for cliente, trava no portal de suporte
           this.currentView.set('public-support');
         }
       } else {
-        // Se deslogar, volta pro público, a menos que esteja no suporte público ou tentando logar
         if (this.currentView() !== 'public' && this.currentView() !== 'public-support' && this.currentView() !== 'auth') {
            this.currentView.set('public');
         }
