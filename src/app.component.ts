@@ -14,8 +14,9 @@ import { PublicSupportComponent } from './components/public-support.component';
 import { SettingsViewComponent } from './components/settings-view.component';
 import { UsersViewComponent } from './components/users-view.component';
 import { ClientsViewComponent } from './components/clients-view.component';
+import { AutomationsViewComponent } from './components/automations-view.component';
 
-type View = 'public' | 'public-support' | 'auth' | 'dashboard' | 'portfolio' | 'kanban' | 'support' | 'sales' | 'squads' | 'personal' | 'settings' | 'users' | 'clients';
+type View = 'public' | 'public-support' | 'auth' | 'dashboard' | 'portfolio' | 'kanban' | 'support' | 'sales' | 'squads' | 'personal' | 'settings' | 'users' | 'clients' | 'automations';
 
 @Component({
   selector: 'app-root',
@@ -34,7 +35,8 @@ type View = 'public' | 'public-support' | 'auth' | 'dashboard' | 'portfolio' | '
     PublicSupportComponent,
     SettingsViewComponent,
     UsersViewComponent,
-    ClientsViewComponent
+    ClientsViewComponent,
+    AutomationsViewComponent
   ],
   template: `
     @if (currentView() === 'public') {

@@ -122,6 +122,16 @@ import { DataService } from '../services/data.service';
                 class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-white focus:border-indigo-500 outline-none transition-colors">
             </div>
 
+            <div class="pt-4 border-t border-zinc-800">
+              <label class="block text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                Model Context Protocol (MCP) Servers
+              </label>
+              <p class="text-[9px] text-zinc-500 mb-2 font-mono">URLs separadas por vírgula para fornecer contexto avançado aos Agentes (ex: WebMCP, Github MCP).</p>
+              <textarea [(ngModel)]="mcpServers" name="mcpServers" rows="2" placeholder="http://localhost:3000/mcp, https://api.exemplo.com/mcp"
+                class="w-full bg-indigo-500/5 border border-indigo-500/20 rounded-xl p-4 text-xs text-indigo-200 focus:border-indigo-500 outline-none transition-colors resize-none font-mono"></textarea>
+            </div>
+
             <button type="submit" [disabled]="loading()"
               class="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all disabled:opacity-50">
               Salvar Integrações

@@ -33,7 +33,24 @@ export interface AppSettings {
     resendApiKey?: string;
     whatsappApiToken?: string;
     githubToken?: string;
+    mcpServers?: string[]; // URLs de servidores MCP para os agentes
   };
+}
+
+export interface AutomationNode {
+  id: string;
+  type: 'trigger' | 'action' | 'condition' | 'ai_agent';
+  title: string;
+  config: any;
+  position: { x: number, y: number };
+}
+
+export interface AutomationFlow {
+  id: string;
+  name: string;
+  status: 'Ativo' | 'Pausado' | 'Rascunho';
+  nodes: AutomationNode[];
+  edges: { source: string, target: string }[];
 }
 
 export interface TaskComment {
