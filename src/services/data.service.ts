@@ -1,5 +1,5 @@
 import { Injectable, signal, computed, effect } from '@angular/core';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient, User } from '@supabase/supabase-js';
 
 export type LifecycleStage = 'Ideação' | 'Validação' | 'Desenvolvimento' | 'Produção' | 'Manutenção';
 export type TaskStatus = 'Backlog' | 'A Fazer' | 'Em Progresso' | 'Revisão' | 'Concluído';
@@ -51,12 +51,14 @@ export interface Ticket {
   createdAt: Date;
   reproductionSteps?: string;
   slaHours: number;
+  clientEmail?: string; // Link to client auth
 }
 
 export interface PersonalTask {
   id: string;
   title: string;
   isCompleted: boolean;
+  status: 'A Fazer' | 'Fazendo' | 'Concluído';
   type: 'Meta' | 'Micro-tarefa' | 'Ideia Maluca';
   createdAt: Date;
 }
@@ -119,6 +121,9 @@ export class DataService {
   private supabase: SupabaseClient;
 
   // --- STATE ---
+  currentUser = signal<User | null>(null);
+  userRole = signal<'admin' | 'client' | null>(null);
+  
   products = signal<Product[]>([]);
   tasks = signal<Task[]>([]);
   tickets = signal<Ticket[]>([]);
@@ -132,8 +137,62 @@ export class DataService {
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFheHhvcnJnemR1YnhiY2tsdXp3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwNTQyMjIsImV4cCI6MjA4NzYzMDIyMn0.NtoEWhcdrm0n_dbNXsggYN-C9X4T4Ufi-spVMyBW6Oc';
     
     this.supabase = createClient(supabaseUrl, supabaseKey);
+    
+    this.supabase.auth.getSession().then(({ data: { session } }) => {
+      this.handleAuthSession(session);
+    });
+
+    this.supabase.auth.onAuthStateChange((_event, session) => {
+      this.handleAuthSession(session);
+    });
+
     this.initializeData();
     this.setupRealtime();
+  }
+
+  private handleAuthSession(session: any) {
+    if (session?.user) {
+      this.currentUser.set(session.user);
+      this.userRole.set(session.user.user_metadata?.role || 'client'); // Default to client if not specified
+    } else {
+      this.currentUser.set(null);
+      this.userRole.set(null);
+    }
+  }
+
+  // --- AUTH METHODS ---
+  async login(email: string, password: string) {
+    const { data, error } = await this.supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    return data;
+  }
+
+  async logout() {
+    await this.supabase.auth.signOut();
+  }
+
+  async updateProfile(name: string, phone?: string) {
+    const { data, error } = await this.supabase.auth.updateUser({
+      data: { full_name: name, phone }
+    });
+    if (error) throw error;
+    return data;
+  }
+
+  async changePassword(password: string) {
+    const { data, error } = await this.supabase.auth.updateUser({ password });
+    if (error) throw error;
+    return data;
+  }
+
+  // Admin function to invite/create a user (Simulation for now without Service Role)
+  // In production, this calls a Supabase Edge Function to create user securely.
+  async inviteUser(email: string, role: 'admin' | 'client', companyName?: string) {
+    // For MVP, we simulate invitation logic or use magic links.
+    // Standard signUp logs out the current user, so we just log the intent.
+    console.log(`[Automação] Convite enviado para ${email} (Role: ${role}). Empresa: ${companyName}`);
+    // Ideally: await this.supabase.auth.signInWithOtp({ email, options: { data: { role, company: companyName } } });
+    return true;
   }
 
   private async initializeData() {
@@ -160,13 +219,24 @@ export class DataService {
   // --- FETCHERS ---
   private async fetchLeads() {
     const { data } = await this.supabase.from('leads').select('*').order('created_at', { ascending: false });
-    if (data) this.leads.set(data.map(l => ({ ...l, lastContact: new Date(l.last_contact) })));
+    if (data) this.leads.set(data.map(l => ({ 
+      ...l, 
+      lastContact: new Date(l.last_contact),
+      investigation: l.investigation
+    })));
   }
 
   private async fetchProducts() {
     const { data } = await this.supabase.from('products').select('*').order('created_at', { ascending: false });
     if (data && data.length > 0) {
-      this.products.set(data);
+      this.products.set(data.map(p => ({
+        id: p.id,
+        name: p.name,
+        stage: p.stage,
+        version: p.version,
+        revenue: p.revenue,
+        nextAction: p.next_action
+      })));
     } else {
       this.seedProducts();
     }
@@ -189,23 +259,44 @@ export class DataService {
     if (data) this.tasks.set(data.map(t => ({ 
       ...t, 
       deadline: t.deadline ? new Date(t.deadline) : undefined,
+      linkedProductId: t.linked_product_id,
+      originTicketId: t.origin_ticket_id,
+      assignedTo: t.assigned_to,
       comments: t.comments || [] 
     })));
   }
 
   private async fetchTickets() {
     const { data } = await this.supabase.from('tickets').select('*').order('created_at', { ascending: false });
-    if (data) this.tickets.set(data.map(tk => ({ ...tk, createdAt: new Date(tk.created_at) })));
+    if (data) this.tickets.set(data.map(tk => ({ 
+      ...tk, 
+      createdAt: new Date(tk.created_at),
+      linkedProductId: tk.linked_product_id,
+      linkedTaskId: tk.linked_task_id,
+      reproductionSteps: tk.reproduction_steps,
+      slaHours: tk.sla_hours,
+      clientEmail: tk.client_email
+    })));
   }
 
   private async fetchMessages() {
     const { data } = await this.supabase.from('messages').select('*').order('timestamp', { ascending: true });
-    if (data) this.messages.set(data.map(m => ({ ...m, timestamp: new Date(m.timestamp) })));
+    if (data) this.messages.set(data.map(m => ({ 
+      ...m, 
+      senderId: m.sender_id,
+      senderName: m.sender_name,
+      timestamp: new Date(m.timestamp),
+      isPrivate: m.is_private
+    })));
   }
 
   private async fetchPersonalTasks() {
     const { data } = await this.supabase.from('personal_tasks').select('*').order('created_at', { ascending: false });
-    if (data) this.personalTasks.set(data.map(pt => ({ ...pt, createdAt: new Date(pt.created_at) })));
+    if (data) this.personalTasks.set(data.map(pt => ({ 
+      ...pt, 
+      createdAt: new Date(pt.created_at),
+      isCompleted: pt.is_completed
+    })));
   }
 
   private async fetchSquads() {
@@ -214,11 +305,11 @@ export class DataService {
       this.squads.set([
         {
           id: 's1', name: 'Squad Growth', type: 'Growth', kpi: 'Conversão de Leads', healthScore: 92,
-          members: data.filter(m => ['m1', 'm2'].includes(m.id))
+          members: data.filter(m => ['m1', 'm2'].includes(m.id)).map(m => ({ ...m, lastActivity: m.last_activity }))
         },
         {
           id: 's2', name: 'Squad Delivery', type: 'Delivery', kpi: 'Sprint Velocity', healthScore: 88,
-          members: data.filter(m => ['m3', 'm4'].includes(m.id))
+          members: data.filter(m => ['m3', 'm4'].includes(m.id)).map(m => ({ ...m, lastActivity: m.last_activity }))
         }
       ]);
     } else {
@@ -248,7 +339,11 @@ export class DataService {
 
   // --- CRUD: PERSONAL TASKS ---
   async addPersonalTask(task: Omit<PersonalTask, 'id' | 'createdAt'>) {
-    await this.supabase.from('personal_tasks').insert([task]);
+    await this.supabase.from('personal_tasks').insert([{
+      title: task.title,
+      is_completed: task.isCompleted,
+      type: task.type
+    }]);
   }
 
   async togglePersonalTask(id: string) {
@@ -265,7 +360,17 @@ export class DataService {
   // --- CRUD: LEADS ---
   async updateLead(lead: Lead) {
     const { id, ...updateData } = lead;
-    await this.supabase.from('leads').update(updateData).eq('id', id);
+    await this.supabase.from('leads').update({
+      company: updateData.company,
+      contact: updateData.contact,
+      email: updateData.email,
+      phone: updateData.phone,
+      linkedin: updateData.linkedin,
+      value: updateData.value,
+      status: updateData.status,
+      source: updateData.source,
+      investigation: updateData.investigation
+    }).eq('id', id);
   }
 
   async deleteLead(id: string) {
@@ -273,18 +378,51 @@ export class DataService {
   }
 
   async addLead(lead: Omit<Lead, 'id' | 'lastContact'>) {
-    const { data } = await this.supabase.from('leads').insert([lead]).select();
+    const { data } = await this.supabase.from('leads').insert([{
+      company: lead.company,
+      contact: lead.contact,
+      email: lead.email,
+      phone: lead.phone,
+      linkedin: lead.linkedin,
+      value: lead.value,
+      status: lead.status,
+      source: lead.source,
+      investigation: lead.investigation
+    }]).select();
     return data ? data[0].id : null;
   }
 
   // --- CRUD: TASKS ---
   async updateTask(task: Task) {
     const { id, ...updateData } = task;
-    await this.supabase.from('tasks').update(updateData).eq('id', id);
+    await this.supabase.from('tasks').update({
+      title: updateData.title,
+      description: updateData.description,
+      type: updateData.type,
+      points: updateData.points,
+      status: updateData.status,
+      tag: updateData.tag,
+      linked_product_id: updateData.linkedProductId,
+      origin_ticket_id: updateData.originTicketId,
+      assigned_to: updateData.assignedTo,
+      deadline: updateData.deadline,
+      comments: updateData.comments
+    }).eq('id', id);
   }
 
   async addTask(task: Omit<Task, 'id' | 'comments'>) {
-    const { data } = await this.supabase.from('tasks').insert([task]).select();
+    const { data } = await this.supabase.from('tasks').insert([{
+      title: task.title,
+      description: task.description,
+      type: task.type,
+      points: task.points,
+      status: task.status,
+      tag: task.tag,
+      linked_product_id: task.linkedProductId,
+      origin_ticket_id: task.originTicketId,
+      assigned_to: task.assignedTo,
+      deadline: task.deadline
+    }]).select();
     return data ? data[0].id : null;
   }
 
@@ -305,17 +443,37 @@ export class DataService {
   // --- CRUD: PRODUCTS ---
   async updateProduct(product: Product) {
     const { id, ...updateData } = product;
-    await this.supabase.from('products').update(updateData).eq('id', id);
+    await this.supabase.from('products').update({
+      name: updateData.name,
+      stage: updateData.stage,
+      version: updateData.version,
+      revenue: updateData.revenue,
+      next_action: updateData.nextAction
+    }).eq('id', id);
   }
   
   async addProduct(product: Omit<Product, 'id'>) {
-    const { data } = await this.supabase.from('products').insert([product]).select();
+    const { data } = await this.supabase.from('products').insert([{
+      name: product.name,
+      stage: product.stage,
+      version: product.version,
+      revenue: product.revenue,
+      next_action: product.nextAction
+    }]).select();
     return data ? data[0].id : null;
   }
 
   // --- CRUD: TICKETS ---
   async addTicket(ticket: Omit<Ticket, 'id' | 'createdAt' | 'status'>) {
-    await this.supabase.from('tickets').insert([ticket]);
+    await this.supabase.from('tickets').insert([{
+      title: ticket.title,
+      client: ticket.client,
+      description: ticket.description,
+      priority: ticket.priority,
+      linked_product_id: ticket.linkedProductId,
+      sla_hours: ticket.slaHours,
+      client_email: ticket.clientEmail
+    }]);
   }
 
   async updateTicketStatus(id: string, status: TicketStatus) {

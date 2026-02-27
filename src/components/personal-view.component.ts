@@ -22,52 +22,68 @@ import { DataService, PersonalTask } from '../services/data.service';
           </button>
         </header>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <!-- Pending Tasks -->
-          <div class="bg-zinc-900/50 border border-zinc-800 rounded-3xl p-6">
-            <h4 class="text-xs font-black text-zinc-400 uppercase tracking-widest mb-6">Em Andamento</h4>
-            <div class="space-y-4">
-              @for (task of pendingTasks(); track task.id) {
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 h-full overflow-hidden pb-8">
+          <!-- TODO -->
+          <div class="bg-zinc-900/50 border border-zinc-800 rounded-3xl p-4 flex flex-col">
+            <h4 class="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+              <div class="w-2 h-2 rounded-full bg-zinc-600"></div> A Fazer
+            </h4>
+            <div class="space-y-3 overflow-y-auto custom-scrollbar flex-1">
+              @for (task of todoTasks(); track task.id) {
                 <div class="p-4 bg-zinc-950 rounded-2xl border border-zinc-800 group hover:border-emerald-500/50 transition-all">
                   <div class="flex gap-4 items-start">
-                    <button (click)="toggle(task.id)" class="w-6 h-6 rounded-lg border-2 border-zinc-700 mt-0.5 group-hover:border-emerald-500 flex items-center justify-center transition-colors">
-                      <svg class="w-4 h-4 text-emerald-500 opacity-0 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>
-                    </button>
                     <div class="flex-1">
-                      <span class="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded border mb-2 inline-block"
+                      <span class="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded border mb-2 inline-block"
                         [class.bg-indigo-900.text-indigo-400.border-indigo-500]="task.type === 'Meta'"
                         [class.bg-emerald-900.text-emerald-400.border-emerald-500]="task.type === 'Micro-tarefa'"
                         [class.bg-rose-900.text-rose-400.border-rose-500]="task.type === 'Ideia Maluca'">
                         {{ task.type }}
                       </span>
-                      <p class="text-sm font-bold text-white leading-snug">{{ task.title }}</p>
+                      <p class="text-xs font-bold text-white leading-snug">{{ task.title }}</p>
                     </div>
-                    <button (click)="deleteTask(task.id)" class="text-zinc-600 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all">
-                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    <button (click)="toggle(task.id)" class="text-emerald-500 hover:scale-110 transition-transform">
+                      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
                     </button>
                   </div>
                 </div>
               }
-              @if (pendingTasks().length === 0) {
-                <p class="text-center text-xs text-zinc-600 italic py-8">Tudo limpo por aqui! Você está livre.</p>
+            </div>
+          </div>
+
+          <!-- DOING -->
+          <div class="bg-indigo-600/5 border border-indigo-500/20 rounded-3xl p-4 flex flex-col">
+            <h4 class="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+              <div class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></div> Fazendo
+            </h4>
+            <div class="space-y-3 overflow-y-auto custom-scrollbar flex-1">
+              @for (task of doingTasks(); track task.id) {
+                <div class="p-4 bg-zinc-950 rounded-2xl border border-indigo-500/30 group shadow-lg shadow-indigo-500/5">
+                  <div class="flex gap-4 items-start">
+                    <div class="flex-1">
+                      <p class="text-xs font-bold text-white leading-snug">{{ task.title }}</p>
+                    </div>
+                    <button (click)="toggle(task.id)" class="text-emerald-500 hover:scale-110 transition-transform">
+                      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                    </button>
+                  </div>
+                </div>
               }
             </div>
           </div>
 
-          <!-- Completed Tasks -->
-          <div class="bg-zinc-900/30 border border-zinc-800/50 rounded-3xl p-6 opacity-70 hover:opacity-100 transition-opacity">
-            <h4 class="text-xs font-black text-zinc-500 uppercase tracking-widest mb-6">Concluídas</h4>
-            <div class="space-y-4">
+          <!-- DONE -->
+          <div class="bg-emerald-600/5 border border-emerald-500/20 rounded-3xl p-4 flex flex-col">
+            <h4 class="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+              <div class="w-2 h-2 rounded-full bg-emerald-500"></div> Concluído
+            </h4>
+            <div class="space-y-3 overflow-y-auto custom-scrollbar flex-1">
               @for (task of completedTasks(); track task.id) {
-                <div class="p-4 bg-zinc-950/50 rounded-2xl border border-zinc-800/50 group">
+                <div class="p-4 bg-zinc-950/50 rounded-2xl border border-zinc-800/50 group opacity-60">
                   <div class="flex gap-4 items-start">
-                    <button (click)="toggle(task.id)" class="w-6 h-6 rounded-lg bg-emerald-500/20 border-2 border-emerald-500 mt-0.5 flex items-center justify-center">
-                      <svg class="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>
-                    </button>
                     <div class="flex-1">
-                      <p class="text-sm font-bold text-zinc-500 line-through leading-snug">{{ task.title }}</p>
+                      <p class="text-xs font-bold text-zinc-500 line-through leading-snug">{{ task.title }}</p>
                     </div>
-                    <button (click)="deleteTask(task.id)" class="text-zinc-700 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all">
+                    <button (click)="deleteTask(task.id)" class="text-zinc-700 hover:text-rose-500 transition-colors">
                       <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                     </button>
                   </div>
@@ -135,8 +151,9 @@ export class PersonalViewComponent {
   dataService = inject(DataService);
   newMessage = '';
 
-  pendingTasks = computed(() => this.dataService.personalTasks().filter(t => !t.isCompleted));
-  completedTasks = computed(() => this.dataService.personalTasks().filter(t => t.isCompleted));
+  todoTasks = computed(() => this.dataService.personalTasks().filter(t => t.status === 'A Fazer'));
+  doingTasks = computed(() => this.dataService.personalTasks().filter(t => t.status === 'Fazendo'));
+  completedTasks = computed(() => this.dataService.personalTasks().filter(t => t.status === 'Concluído'));
 
   filteredMessages = computed(() => this.dataService.messages().filter(m => m.isPrivate && m.senderName.includes('Mentoria')));
 
@@ -148,7 +165,7 @@ export class PersonalViewComponent {
     if (title.toLowerCase().includes('crochê') || title.toLowerCase().includes('curso')) type = 'Ideia Maluca';
     if (title.toLowerCase().includes('meta') || title.toLowerCase().includes('objetivo')) type = 'Meta';
 
-    this.dataService.addPersonalTask({ title, type, isCompleted: false });
+    this.dataService.addPersonalTask({ title, type });
 
     if (type === 'Ideia Maluca') {
       this.dataService.sendMessage(`Matteuz, vi que você adicionou "${title}". Respire fundo. Vamos focar no CRM da Konig primeiro? Deixa isso para o final de semana!`, 'Mentoria Orion', true);
@@ -156,7 +173,11 @@ export class PersonalViewComponent {
   }
 
   toggle(id: string) {
-    this.dataService.togglePersonalTask(id);
+    const task = this.dataService.personalTasks().find(t => t.id === id);
+    if (task) {
+      const nextStatus = task.status === 'A Fazer' ? 'Fazendo' : (task.status === 'Fazendo' ? 'Concluído' : 'A Fazer');
+      this.dataService.updatePersonalTaskStatus(id, nextStatus);
+    }
   }
 
   deleteTask(id: string) {

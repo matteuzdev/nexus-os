@@ -13,7 +13,7 @@ import { DataService, LifecycleStage } from '../services/data.service';
           <h2 class="text-xl font-bold text-white">Portfólio de Produtos</h2>
           <p class="text-zinc-400 text-sm mt-1">Visão estratégica e saúde do ecossistema.</p>
         </div>
-        <button class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition-colors">
+        <button (click)="addProduct()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition-colors">
           Novo Produto
         </button>
       </div>
@@ -88,5 +88,18 @@ export class PortfolioViewComponent {
 
   getTicketCount(productId: string): number {
     return this.dataService.tickets().filter(t => t.linkedProductId === productId && t.status !== 'Resolvido').length;
+  }
+
+  addProduct() {
+    const name = prompt('Nome do novo produto:');
+    if (name) {
+      this.dataService.addProduct({
+        name,
+        stage: 'Ideação',
+        version: 'v0.1.0',
+        revenue: 0,
+        nextAction: 'Definir escopo inicial'
+      });
+    }
   }
 }
