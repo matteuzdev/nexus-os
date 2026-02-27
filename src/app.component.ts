@@ -1,5 +1,7 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, inject, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { DataService } from './services/data.service';
+import { AuthComponent } from './components/auth.component';
 import { DashboardViewComponent } from './components/dashboard-view.component';
 import { PortfolioViewComponent } from './components/portfolio-view.component';
 import { KanbanViewComponent } from './components/kanban-view.component';
@@ -17,6 +19,7 @@ type View = 'public' | 'public-support' | 'dashboard' | 'portfolio' | 'kanban' |
   standalone: true,
   imports: [
     CommonModule, 
+    AuthComponent,
     DashboardViewComponent, 
     PortfolioViewComponent, 
     KanbanViewComponent, 
@@ -30,7 +33,11 @@ type View = 'public' | 'public-support' | 'dashboard' | 'portfolio' | 'kanban' |
   template: `
     @if (currentView() === 'public') {
       <div class="h-screen overflow-y-auto custom-scrollbar bg-zinc-950">
-        <app-public-website (login)="currentView.set('dashboard')" (support)="currentView.set('public-support')"></app-public-website>
+        <app-public-website (login)="currentView.set('auth')" (support)="currentView.set('public-support')"></app-public-website>
+      </div>
+    } @else if (currentView() === 'auth') {
+      <div class="h-screen overflow-y-auto custom-scrollbar bg-zinc-950">
+        <app-auth (back)="currentView.set('public')"></app-auth>
       </div>
     } @else if (currentView() === 'public-support') {
       <div class="h-screen overflow-y-auto custom-scrollbar bg-zinc-950">
@@ -108,15 +115,17 @@ type View = 'public' | 'public-support' | 'dashboard' | 'portfolio' | 'kanban' |
           <!-- User Profile & Exit -->
           <div class="p-4 border-t border-zinc-800 space-y-4">
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center font-bold text-xs">M</div>
+              <div class="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center font-bold text-xs">
+                {{ dataService.currentUser()?.user_metadata?.['full_name']?.substring(0,1) || 'U' }}
+              </div>
               <div class="flex flex-col">
-                <span class="text-xs font-bold text-white">Matteuz</span>
-                <span class="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">CEO</span>
+                <span class="text-xs font-bold text-white">{{ dataService.currentUser()?.user_metadata?.['full_name'] || 'Usuário' }}</span>
+                <span class="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">{{ dataService.userRole() || 'Perfil' }}</span>
               </div>
             </div>
-            <button (click)="currentView.set('public')" class="w-full text-[10px] uppercase font-bold text-zinc-500 hover:text-zinc-300 py-2 border border-zinc-800 hover:bg-zinc-800 rounded transition-colors flex items-center justify-center gap-2">
+            <button (click)="logout()" class="w-full text-[10px] uppercase font-bold text-zinc-500 hover:text-zinc-300 py-2 border border-zinc-800 hover:bg-zinc-800 rounded transition-colors flex items-center justify-center gap-2">
               <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-              Sair / Landing Page
+              Sair do Sistema
             </button>
           </div>
         </aside>
@@ -171,5 +180,30 @@ type View = 'public' | 'public-support' | 'dashboard' | 'portfolio' | 'kanban' |
   `]
 })
 export class AppComponent {
+  dataService = inject(DataService);
   currentView = signal<View>('public'); // Defaults to public site
+
+  constructor() {
+    effect(() => {
+      const user = this.dataService.currentUser();
+      const role = this.dataService.userRole();
+
+      if (user) {
+        if (role === 'admin') {
+          this.currentView.set('dashboard');
+        } else {
+          this.currentView.set('public-support');
+        }
+      } else {
+        if (this.currentView() !== 'public' && this.currentView() !== 'public-support' && this.currentView() !== 'auth') {
+           this.currentView.set('public');
+        }
+      }
+    });
+  }
+
+  logout() {
+    this.dataService.logout();
+    this.currentView.set('public');
+  }
 }

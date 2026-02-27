@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DataService, Ticket, TicketStatus } from '../services/data.service';
@@ -205,6 +205,15 @@ export class SupportViewComponent {
   selectedTicket = signal<Ticket | null>(null);
   isDrawerOpen = signal(false);
   isAnalyzing = signal(false);
+
+  constructor() {
+    effect(async () => {
+      const ticket = this.selectedTicket();
+      if (ticket && !ticket.reproductionSteps && this.aiService.hasKey()) {
+        await this.generateQASteps();
+      }
+    });
+  }
 
   updateStatus(newStatus: TicketStatus) {
     if (this.selectedTicket()) {

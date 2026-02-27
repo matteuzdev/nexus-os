@@ -139,12 +139,13 @@ export class SalesViewComponent {
   createNewLead() {
     const company = prompt('Nome da empresa:');
     if (company) {
+      const value = parseFloat(prompt('Valor estimado do projeto (R$):') || '0');
       this.dataService.addLead({
         company,
         contact: 'Novo Contato',
         email: '',
         phone: '',
-        value: 0,
+        value: value,
         status: 'Lead',
         source: 'Manual',
         investigation: {

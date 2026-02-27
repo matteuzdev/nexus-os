@@ -167,6 +167,22 @@ export class DataService {
     return data;
   }
 
+  async register(email: string, password: string, name: string, role: 'admin' | 'client' = 'client', companyName?: string) {
+    const { data, error } = await this.supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: name,
+          role: role,
+          company: companyName
+        }
+      }
+    });
+    if (error) throw error;
+    return data;
+  }
+
   async logout() {
     await this.supabase.auth.signOut();
   }

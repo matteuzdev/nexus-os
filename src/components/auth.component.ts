@@ -23,15 +23,36 @@ import { DataService } from '../services/data.service';
           <p class="text-xs text-zinc-500 uppercase tracking-widest font-bold mt-1">Acesso Restrito</p>
         </div>
 
-        <form (submit)="handleLogin($event)" class="space-y-6">
+        <form (submit)="handleSubmit($event)" class="space-y-6">
           @if (errorMessage()) {
             <div class="p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-400 text-xs font-bold text-center animate-in fade-in">
               {{ errorMessage() }}
             </div>
           }
 
+          @if (isRegistering()) {
+            <div>
+              <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">Nome Completo</label>
+              <input type="text" [(ngModel)]="fullName" name="fullName" required
+                class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-white focus:border-indigo-500 outline-none transition-colors">
+            </div>
+            <div>
+              <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">Sua Empresa</label>
+              <input type="text" [(ngModel)]="companyName" name="companyName" required
+                class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-white focus:border-indigo-500 outline-none transition-colors">
+            </div>
+            <div>
+              <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">Tipo de Conta</label>
+              <select [(ngModel)]="role" name="role"
+                class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-white focus:border-indigo-500 outline-none transition-colors appearance-none">
+                <option value="client">Empresa / Cliente</option>
+                <option value="admin">Administrador / Staff</option>
+              </select>
+            </div>
+          }
+
           <div>
-            <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">E-mail Corporativo</label>
+            <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">E-mail corporativo</label>
             <input type="email" [(ngModel)]="email" name="email" required
               class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-white focus:border-indigo-500 outline-none transition-colors">
           </div>
@@ -46,14 +67,18 @@ import { DataService } from '../services/data.service';
             class="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-indigo-500/20 disabled:opacity-50 flex items-center justify-center gap-2">
             @if (loading()) {
               <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-              Autenticando...
+              Processando...
             } @else {
-              Entrar no Sistema
+              {{ isRegistering() ? 'Criar Minha Conta' : 'Entrar no Sistema' }}
             }
           </button>
         </form>
 
-        <div class="mt-8 pt-6 border-t border-zinc-800 text-center">
+        <div class="mt-8 pt-6 border-t border-zinc-800 text-center space-y-4">
+          <button (click)="isRegistering.set(!isRegistering())" class="text-xs text-indigo-400 hover:text-indigo-300 transition-colors font-bold uppercase tracking-widest">
+            {{ isRegistering() ? 'Já tenho uma conta? Entrar' : 'Não tem conta? Registre sua empresa' }}
+          </button>
+          <br>
           <button (click)="back.emit()" class="text-xs text-zinc-500 hover:text-white transition-colors font-bold uppercase tracking-widest">
             ← Voltar para Konig Systems
           </button>
@@ -66,12 +91,17 @@ export class AuthComponent {
   dataService = inject(DataService);
   back = output<void>();
   
+  isRegistering = signal(false);
   email = '';
   password = '';
+  fullName = '';
+  companyName = '';
+  role: 'admin' | 'client' = 'client';
+  
   loading = signal(false);
   errorMessage = signal('');
 
-  async handleLogin(e: Event) {
+  async handleSubmit(e: Event) {
     e.preventDefault();
     if (!this.email || !this.password) return;
 
@@ -79,10 +109,15 @@ export class AuthComponent {
     this.errorMessage.set('');
 
     try {
-      await this.dataService.login(this.email, this.password);
-      // DataService state automatically updates and AppComponent handles routing
+      if (this.isRegistering()) {
+        await this.dataService.register(this.email, this.password, this.fullName, this.role, this.companyName);
+        alert('Conta criada com sucesso! Faça login agora.');
+        this.isRegistering.set(false);
+      } else {
+        await this.dataService.login(this.email, this.password);
+      }
     } catch (err: any) {
-      this.errorMessage.set(err.message || 'Credenciais inválidas. Tente novamente.');
+      this.errorMessage.set(err.message || 'Erro na autenticação. Tente novamente.');
     } finally {
       this.loading.set(false);
     }

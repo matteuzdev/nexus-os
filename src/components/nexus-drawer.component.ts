@@ -54,6 +54,10 @@ import { DataService, Lead, Task, Ticket } from '../services/data.service';
                         <label class="text-[10px] text-zinc-500 uppercase font-bold block mb-1">Telefone / WhatsApp</label>
                         <input [(ngModel)]="asLead().phone" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-sm text-white outline-none focus:border-indigo-500">
                       </div>
+                      <div>
+                        <label class="text-[10px] text-zinc-500 uppercase font-bold block mb-1">Valor Estimado (R$)</label>
+                        <input type="number" [(ngModel)]="asLead().value" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-sm text-emerald-400 font-bold outline-none focus:border-indigo-500">
+                      </div>
                     </div>
 
                     <div class="bg-zinc-950/50 p-4 rounded-xl border border-zinc-800 space-y-3">

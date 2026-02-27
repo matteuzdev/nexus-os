@@ -32,13 +32,37 @@ import { AiService } from '../services/ai.service';
         <div class="max-w-3xl w-full">
           <div class="flex items-center justify-center gap-3 mb-6">
              <div class="w-6 h-6 rounded bg-indigo-600 flex items-center justify-center text-[10px] font-bold">N</div>
-             <span class="text-zinc-500 text-xs font-mono tracking-widest uppercase font-bold">Powered by Nexus OS</span>
+             <span class="text-zinc-500 text-xs font-mono tracking-widest uppercase font-bold">Portal do Cliente</span>
           </div>
           
-          <h2 class="text-4xl font-black mb-4 text-center tracking-tighter">Abrir Chamado Técnico</h2>
-          <p class="text-zinc-400 text-center mb-10 max-w-lg mx-auto leading-relaxed">
-            Nossa equipe de Customer Success e Quality Assurance já está de prontidão para resolver seu problema.
-          </p>
+          <h2 class="text-4xl font-black mb-4 text-center tracking-tighter">Central de Chamados Konig</h2>
+          
+          @if (!dataService.currentUser()) {
+            <div class="bg-indigo-600/10 border border-indigo-500/30 p-6 rounded-2xl mb-10 text-center animate-in fade-in slide-in-from-top-4">
+              <p class="text-sm text-indigo-100 font-bold mb-4">Para um atendimento prioritário e rastreio de SLA, acesse sua conta.</p>
+              <button (click)="back.emit()" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black uppercase tracking-widest rounded-lg">Fazer Login</button>
+            </div>
+          } @else {
+            <div class="bg-zinc-900/50 border border-zinc-800 p-6 rounded-2xl mb-10 animate-in fade-in slide-in-from-top-4">
+              <div class="flex items-center gap-4 mb-4">
+                <div class="w-12 h-12 rounded-xl bg-indigo-600/20 flex items-center justify-center text-indigo-400 font-black">
+                  {{ dataService.currentUser()?.user_metadata?.['company']?.substring(0,1) || 'C' }}
+                </div>
+                <div>
+                  <h3 class="font-bold text-white text-lg">Bem-vindo ao Onboarding de Suporte</h3>
+                  <p class="text-xs text-zinc-500 uppercase font-bold tracking-widest">{{ dataService.currentUser()?.user_metadata?.['company'] }}</p>
+                </div>
+              </div>
+              <p class="text-xs text-zinc-400 leading-relaxed mb-4">
+                Como cliente parceiro, seus chamados são triados pela **Carla (Nossa IA de QA)** em tempo real. 
+                Você pode abrir novos tickets e ver o status da engenharia.
+              </p>
+              <div class="flex gap-4">
+                 <span class="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-1 rounded font-bold uppercase tracking-widest">SLA Ativo: 4h</span>
+                 <span class="text-[10px] bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-1 rounded font-bold uppercase tracking-widest">Suporte VIP</span>
+              </div>
+            </div>
+          }
 
           <form (submit)="submitTicket($event)" class="bg-zinc-900/50 p-8 rounded-[2rem] border border-zinc-800 shadow-2xl backdrop-blur-md">
             @if (successMessage()) {
@@ -54,7 +78,7 @@ import { AiService } from '../services/ai.service';
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">Sua Empresa</label>
-                  <input name="client" [(ngModel)]="form.client" [disabled]="isSubmitting()" required class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-white focus:border-indigo-500 outline-none transition-colors disabled:opacity-50" placeholder="Ex: Barbearia Silva">
+                  <input name="client" [ngModel]="form.client" (ngModelChange)="form.client = $event" [disabled]="isSubmitting() || !!dataService.currentUser()" required class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-white focus:border-indigo-500 outline-none transition-colors disabled:opacity-50" placeholder="Ex: Barbearia Silva">
                 </div>
                 <div>
                   <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">Produto Afetado</label>
@@ -82,7 +106,7 @@ import { AiService } from '../services/ai.service';
                   <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                   IA Analisando Chamado...
                 } @else {
-                  Enviar para a Konig Systems
+                  Enviar Chamado à Konig
                 }
               </button>
             </div>
@@ -118,9 +142,20 @@ export class PublicSupportComponent {
   successMessage = signal('');
   isSubmitting = signal(false);
 
+  constructor() {
+    import { effect } from '@angular/core';
+    effect(() => {
+      const user = this.dataService.currentUser();
+      if (user) {
+        this.form.client = user.user_metadata?.['company'] || '';
+      }
+    });
+  }
+
   async submitTicket(e: Event) {
     e.preventDefault();
-    if (!this.form.client || !this.form.title || !this.form.linkedProductId) return;
+    const finalClient = this.form.client || this.dataService.currentUser()?.user_metadata?.['company'];
+    if (!finalClient || !this.form.title || !this.form.linkedProductId) return;
 
     this.isSubmitting.set(true);
 
@@ -134,7 +169,7 @@ export class PublicSupportComponent {
 
       this.dataService.addTicket({
         title: this.form.title,
-        client: this.form.client,
+        client: finalClient,
         description: this.form.description,
         priority: analysis.priority as TicketPriority,
         linkedProductId: this.form.linkedProductId,
@@ -143,10 +178,10 @@ export class PublicSupportComponent {
 
       this.successMessage.set(`Chamado recebido e classificado por nossa IA.<br>SLA de Resposta: <strong>${sla} Horas</strong>.<br>Acompanhe seu email para atualizações.`);
       
-      this.form = { client: '', title: '', description: '', linkedProductId: '' };
+      this.form = { client: finalClient, title: '', description: '', linkedProductId: '' };
       setTimeout(() => {
         this.successMessage.set('');
-        this.back.emit();
+        if (!this.dataService.currentUser()) this.back.emit();
       }, 6000);
     } catch (err) {
       console.error(err);
