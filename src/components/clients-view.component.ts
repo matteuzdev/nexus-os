@@ -70,15 +70,34 @@ import { NexusDrawerComponent } from './nexus-drawer.component';
                   </td>
                   <td class="px-8 py-6 text-right">
                     <div class="flex justify-end gap-2">
-                      <button (click)="openDetail(client)" class="p-2 hover:bg-indigo-600/20 rounded-lg text-indigo-400 transition-all opacity-0 group-hover:opacity-100">
+                      <button (click)="openDetail(client)" title="Editar Cliente" class="p-2 hover:bg-indigo-600/20 rounded-lg text-indigo-400 transition-all opacity-0 group-hover:opacity-100">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                       </button>
-                      <button (click)="deleteClient(client.id)" class="p-2 hover:bg-rose-500/20 rounded-lg text-rose-500 transition-all opacity-0 group-hover:opacity-100">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                      <button (click)="addProject(client.id)" title="Novo Projeto" class="p-2 hover:bg-emerald-500/20 rounded-lg text-emerald-400 transition-all opacity-0 group-hover:opacity-100">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
                       </button>
                     </div>
                   </td>
                 </tr>
+                <!-- Sub-row for Projects -->
+                @if (getClientProjects(client.id).length > 0) {
+                  <tr class="bg-zinc-950/30">
+                    <td colspan="6" class="px-8 py-4">
+                      <div class="flex items-center gap-4 flex-wrap">
+                        <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest">Projetos:</span>
+                        @for (proj of getClientProjects(client.id); track proj.id) {
+                          <button (click)="openProject(proj)" class="px-3 py-1.5 bg-zinc-900 border border-zinc-800 hover:border-indigo-500 rounded-lg text-xs text-zinc-300 font-medium transition-all flex items-center gap-2">
+                            <div class="w-1.5 h-1.5 rounded-full" 
+                              [class.bg-zinc-600]="proj.status === 'Planejamento'"
+                              [class.bg-indigo-500]="proj.status === 'Em Desenvolvimento'"
+                              [class.bg-emerald-500]="proj.status === 'Em Produção'"></div>
+                            {{ proj.name }}
+                          </button>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                }
               }
             </tbody>
           </table>
@@ -89,8 +108,8 @@ import { NexusDrawerComponent } from './nexus-drawer.component';
     <!-- Detail Drawer -->
     <app-nexus-drawer 
       [isOpen]="isDrawerOpen()" 
-      [type]="'client'" 
-      [data]="selectedClient()" 
+      [type]="drawerType()" 
+      [data]="selectedData()" 
       (close)="isDrawerOpen.set(false)">
     </app-nexus-drawer>
   `
@@ -99,11 +118,36 @@ export class ClientsViewComponent {
   dataService = inject(DataService);
   
   isDrawerOpen = signal(false);
-  selectedClient = signal<Client | null>(null);
+  drawerType = signal<'client' | 'project'>('client');
+  selectedData = signal<any>(null);
+
+  getClientProjects(clientId: string) {
+    return this.dataService.projects().filter(p => p.clientId === clientId);
+  }
 
   openDetail(client: Client) {
-    this.selectedClient.set({ ...client });
+    this.drawerType.set('client');
+    this.selectedData.set({ ...client });
     this.isDrawerOpen.set(true);
+  }
+
+  openProject(project: any) {
+    this.drawerType.set('project');
+    this.selectedData.set({ ...project });
+    this.isDrawerOpen.set(true);
+  }
+
+  async addProject(clientId: string) {
+    const name = prompt('Nome do novo projeto:');
+    if (!name) return;
+    
+    await this.dataService.addProject({
+      clientId,
+      name,
+      url: '',
+      status: 'Planejamento',
+      blueprint: ''
+    });
   }
 
   createNewClient() {

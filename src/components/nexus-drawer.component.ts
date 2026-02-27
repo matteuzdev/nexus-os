@@ -1,7 +1,7 @@
 import { Component, inject, signal, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { DataService, Lead, Task, Ticket, Client } from '../services/data.service';
+import { DataService, Lead, Task, Ticket, Client, Project } from '../services/data.service';
 
 @Component({
   selector: 'app-nexus-drawer',
@@ -36,6 +36,39 @@ import { DataService, Lead, Task, Ticket, Client } from '../services/data.servic
             <!-- Content -->
             <div class="flex-1 overflow-y-auto p-8 custom-scrollbar space-y-10">
               
+              <!-- Project Specific -->
+              @if (type === 'project') {
+                <div class="space-y-8">
+                  <div class="grid grid-cols-1 gap-6 p-6 bg-zinc-900/50 border border-zinc-800 rounded-2xl">
+                    <div>
+                      <label class="text-[10px] text-zinc-500 uppercase font-bold block mb-1">Nome do Projeto</label>
+                      <input [(ngModel)]="asProject().name" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-sm text-white outline-none focus:border-indigo-500">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                      <div>
+                        <label class="text-[10px] text-zinc-500 uppercase font-bold block mb-1">URL (Domínio)</label>
+                        <input [(ngModel)]="asProject().url" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-sm text-white outline-none focus:border-indigo-500">
+                      </div>
+                      <div>
+                        <label class="text-[10px] text-zinc-500 uppercase font-bold block mb-1">Status</label>
+                        <select [(ngModel)]="asProject().status" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-sm text-white outline-none focus:border-indigo-500 appearance-none">
+                          <option value="Planejamento">Planejamento</option>
+                          <option value="Em Desenvolvimento">Em Desenvolvimento</option>
+                          <option value="Em Produção">Em Produção</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label class="text-[10px] text-indigo-400 uppercase font-black block mb-1 flex items-center gap-2">
+                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                        Blueprint Neural (Contexto Único)
+                      </label>
+                      <textarea [(ngModel)]="asProject().blueprint" rows="10" placeholder="Descreva a arquitetura visual, cores, botões e fluxo exclusivos deste projeto..." class="w-full bg-indigo-500/5 border border-indigo-500/20 rounded-lg p-3 text-xs text-indigo-200 outline-none focus:border-indigo-500 resize-none font-mono"></textarea>
+                    </div>
+                  </div>
+                </div>
+              }
+
               <!-- Client Specific -->
               @if (type === 'client') {
                 <div class="space-y-8">
@@ -289,8 +322,19 @@ export class NexusDrawerComponent {
     input.value = '';
   }
 
-  async triggerAction(action: string) {
+  async triggerAction(action: 'whatsapp' | 'email' | 'automation') {
     const lead = this.asLead();
+    
+    if (action === 'whatsapp' && !this.dataService.hasIntegration('whatsapp')) {
+      alert('⚠️ Integração do WhatsApp não configurada. Vá em Minha Conta -> Integrações.');
+      return;
+    }
+    
+    if (action === 'email' && !this.dataService.hasIntegration('email')) {
+      alert('⚠️ Integração do Resend (E-mail) não configurada. Vá em Minha Conta -> Integrações.');
+      return;
+    }
+
     alert(`Automação Nexus: Disparando ${action} para ${lead.contact}...`);
     
     await this.dataService.notifyTeam(

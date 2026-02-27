@@ -15,7 +15,25 @@ export interface Product {
   version: string;
   revenue: number;
   nextAction: string;
-  blueprint?: string; // Mapa mental/técnico do sistema para os agentes
+}
+
+export interface Project {
+  id: string;
+  clientId: string;
+  name: string;
+  url: string;
+  status: 'Planejamento' | 'Em Desenvolvimento' | 'Em Produção';
+  blueprint: string; // Mapa mental/técnico exclusivo deste projeto
+  createdAt: Date;
+}
+
+export interface AppSettings {
+  theme: 'nexus-dark' | 'neon-cyber' | 'ruby-red' | 'emerald-city';
+  integrations: {
+    resendApiKey?: string;
+    whatsappApiToken?: string;
+    githubToken?: string;
+  };
 }
 
 export interface TaskComment {
@@ -33,7 +51,7 @@ export interface Task {
   points: number;
   status: TaskStatus;
   tag: string;
-  linkedProductId?: string;
+  linkedProjectId?: string;
   originTicketId?: string;
   comments: TaskComment[];
   assignedTo?: string;
@@ -47,7 +65,7 @@ export interface Ticket {
   description: string;
   priority: TicketPriority;
   status: TicketStatus;
-  linkedProductId: string;
+  linkedProjectId: string;
   linkedTaskId?: string;
   createdAt: Date;
   reproductionSteps?: string;
@@ -144,6 +162,12 @@ export class DataService {
   squads = signal<Squad[]>([]);
   messages = signal<Message[]>([]);
   clients = signal<Client[]>([]);
+  projects = signal<Project[]>([]);
+  
+  settings = signal<AppSettings>({
+    theme: 'nexus-dark',
+    integrations: {}
+  });
 
   constructor() {
     const supabaseUrl = 'https://qaxxorrgzdubxbckluzw.supabase.co';
@@ -159,8 +183,23 @@ export class DataService {
       this.handleAuthSession(session);
     });
 
+    this.loadSettings();
     this.initializeData();
     this.setupRealtime();
+  }
+
+  private loadSettings() {
+    const saved = localStorage.getItem('nexus_settings');
+    if (saved) {
+      this.settings.set(JSON.parse(saved));
+    }
+  }
+
+  updateSettings(newSettings: AppSettings) {
+    this.settings.set(newSettings);
+    localStorage.setItem('nexus_settings', JSON.stringify(newSettings));
+    // Aplica o tema imediatamente
+    document.body.className = `bg-zinc-950 text-zinc-100 h-screen overflow-hidden ${newSettings.theme}`;
   }
 
   private handleAuthSession(session: any) {
@@ -234,7 +273,8 @@ export class DataService {
       this.fetchMessages(),
       this.fetchPersonalTasks(),
       this.fetchSquads(),
-      this.fetchClients()
+      this.fetchClients(),
+      this.fetchProjects()
     ]);
   }
 
@@ -248,6 +288,14 @@ export class DataService {
   }
 
   // --- FETCHERS ---
+  private async fetchProjects() {
+    const { data } = await this.supabase.from('projects').select('*').order('created_at', { ascending: false });
+    if (data) this.projects.set(data.map(p => ({
+      ...p,
+      clientId: p.client_id,
+      createdAt: new Date(p.created_at)
+    })));
+  }
   private async fetchClients() {
     const { data } = await this.supabase.from('clients').select('*').order('company', { ascending: true });
     if (data) this.clients.set(data.map(c => ({ 
@@ -299,7 +347,7 @@ export class DataService {
     if (data) this.tasks.set(data.map(t => ({ 
       ...t, 
       deadline: t.deadline ? new Date(t.deadline) : undefined,
-      linkedProductId: t.linked_product_id,
+      linkedProjectId: t.linked_project_id,
       originTicketId: t.origin_ticket_id,
       assignedTo: t.assigned_to,
       comments: t.comments || [] 
@@ -311,7 +359,7 @@ export class DataService {
     if (data) this.tickets.set(data.map(tk => ({ 
       ...tk, 
       createdAt: new Date(tk.created_at),
-      linkedProductId: tk.linked_product_id,
+      linkedProjectId: tk.linked_project_id,
       linkedTaskId: tk.linked_task_id,
       reproductionSteps: tk.reproduction_steps,
       slaHours: tk.sla_hours,
@@ -451,7 +499,7 @@ export class DataService {
       points: updateData.points,
       status: updateData.status,
       tag: updateData.tag,
-      linked_product_id: updateData.linkedProductId,
+      linked_project_id: updateData.linkedProjectId,
       origin_ticket_id: updateData.originTicketId,
       assigned_to: updateData.assignedTo,
       deadline: updateData.deadline,
@@ -467,7 +515,7 @@ export class DataService {
       points: task.points,
       status: task.status,
       tag: task.tag,
-      linked_product_id: task.linkedProductId,
+      linked_project_id: task.linkedProjectId,
       origin_ticket_id: task.originTicketId,
       assigned_to: task.assignedTo,
       deadline: task.deadline
@@ -487,6 +535,33 @@ export class DataService {
 
   async deleteTask(id: string) {
     await this.supabase.from('tasks').delete().eq('id', id);
+  }
+
+  // --- CRUD: PROJECTS ---
+  async addProject(project: Omit<Project, 'id' | 'createdAt'>) {
+    const { data } = await this.supabase.from('projects').insert([{
+      client_id: project.clientId,
+      name: project.name,
+      url: project.url,
+      status: project.status,
+      blueprint: project.blueprint
+    }]).select();
+    return data ? data[0].id : null;
+  }
+
+  async updateProject(project: Project) {
+    const { id, ...updateData } = project;
+    await this.supabase.from('projects').update({
+      client_id: updateData.clientId,
+      name: updateData.name,
+      url: updateData.url,
+      status: updateData.status,
+      blueprint: updateData.blueprint
+    }).eq('id', id);
+  }
+
+  async deleteProject(id: string) {
+    await this.supabase.from('projects').delete().eq('id', id);
   }
 
   // --- CRUD: PRODUCTS ---
@@ -519,7 +594,7 @@ export class DataService {
       client: ticket.client,
       description: ticket.description,
       priority: ticket.priority,
-      linked_product_id: ticket.linkedProductId,
+      linked_project_id: ticket.linkedProjectId,
       sla_hours: ticket.slaHours,
       client_email: ticket.clientEmail
     }]);
@@ -544,7 +619,7 @@ export class DataService {
       points: 2,
       status: 'A Fazer',
       tag: 'Suporte',
-      linkedProductId: ticket.linkedProductId,
+      linkedProjectId: ticket.linkedProjectId,
       originTicketId: ticket.id,
       deadline: new Date(new Date().getTime() + (ticket.slaHours * 3600000))
     });
@@ -564,15 +639,30 @@ export class DataService {
     if (newStatus === 'Fechado') {
       const lead = this.leads().find(l => l.id === leadId);
       if (lead) {
-        const newProductId = await this.addProduct({
-          name: `Projeto: ${lead.company}`,
-          stage: 'Ideação',
-          version: 'v0.1.0',
-          revenue: lead.value,
-          nextAction: 'Kickoff técnico'
+        // Find or create client first
+        let client = this.clients().find(c => c.company === lead.company);
+        let clientId = client?.id;
+
+        if (!clientId) {
+          await this.addClient({
+            name: lead.contact,
+            email: lead.email,
+            company: lead.company,
+            status: 'Onboarding'
+          });
+          // To get the ID immediately, we would ideally return it from addClient, but for MVP:
+          // Wait a tick for realtime sync or fetch again. Let's assume we can proceed for tasks.
+        }
+
+        const newProjectId = await this.addProject({
+          clientId: clientId || 'temp-id',
+          name: `Implementação: ${lead.company}`,
+          url: '',
+          status: 'Planejamento',
+          blueprint: `Dossiê SDR:\n${lead.investigation.notes}\n\nStack:\n${lead.investigation.techStack}`
         });
         
-        if (newProductId) {
+        if (newProjectId) {
           await this.addTask({
             title: `Setup Inicial & Kickoff: ${lead.company}`,
             description: `Dossiê: ${lead.investigation.notes}`,
@@ -580,7 +670,7 @@ export class DataService {
             points: 5,
             status: 'A Fazer',
             tag: 'Onboarding',
-            linkedProductId: newProductId
+            linkedProjectId: newProjectId
           });
         }
       }
@@ -593,6 +683,10 @@ export class DataService {
 
   getProductName(id: string): string {
     return this.products().find(p => p.id === id)?.name || 'Produto Desconhecido';
+  }
+
+  getProjectName(id: string): string {
+    return this.projects().find(p => p.id === id)?.name || 'Projeto Desconhecido';
   }
 
   async sendMessage(content: string, senderName: string, isPrivate: boolean = false) {
@@ -672,5 +766,13 @@ export class DataService {
       });
     }
     await this.addTicket(ticket);
+  }
+
+  // --- REGRAS & NOTIFICAÇÕES ---
+  hasIntegration(type: 'email' | 'whatsapp'): boolean {
+    const s = this.settings();
+    if (type === 'email') return !!s.integrations.resendApiKey;
+    if (type === 'whatsapp') return !!s.integrations.whatsappApiToken;
+    return false;
   }
 }

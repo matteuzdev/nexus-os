@@ -1,4 +1,4 @@
-import { Component, inject, signal, effect, output } from '@angular/core';
+import { Component, inject, signal, effect, output, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DataService, TicketPriority } from '../services/data.service';
@@ -81,11 +81,11 @@ import { AiService } from '../services/ai.service';
                   <input name="client" [ngModel]="form.client" (ngModelChange)="form.client = $event" [disabled]="isSubmitting() || !!dataService.currentUser()" required class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-white focus:border-indigo-500 outline-none transition-colors disabled:opacity-50" placeholder="Ex: Barbearia Silva">
                 </div>
                 <div>
-                  <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">Produto Afetado</label>
-                  <select name="type" [(ngModel)]="form.linkedProductId" [disabled]="isSubmitting()" required class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-white focus:border-indigo-500 outline-none transition-colors appearance-none disabled:opacity-50">
-                    <option value="" disabled selected>Selecione um sistema...</option>
-                    @for (prod of dataService.products(); track prod.id) {
-                      <option [value]="prod.id">{{ prod.name }}</option>
+                  <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">Projeto Afetado</label>
+                  <select name="type" [(ngModel)]="form.linkedProjectId" [disabled]="isSubmitting()" required class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-white focus:border-indigo-500 outline-none transition-colors appearance-none disabled:opacity-50">
+                    <option value="" disabled selected>Selecione um projeto...</option>
+                    @for (proj of clientProjects(); track proj.id) {
+                      <option [value]="proj.id">{{ proj.name }}</option>
                     }
                   </select>
                 </div>
@@ -136,12 +136,20 @@ export class PublicSupportComponent {
     client: '',
     title: '',
     description: '',
-    linkedProductId: '',
+    linkedProjectId: '',
     clientEmail: ''
   };
 
   successMessage = signal('');
   isSubmitting = signal(false);
+
+  clientProjects = computed(() => {
+    const clientName = this.form.client || this.dataService.currentUser()?.user_metadata?.['company'];
+    if (!clientName) return [];
+    const client = this.dataService.clients().find(c => c.company.toLowerCase() === clientName.toLowerCase());
+    if (!client) return [];
+    return this.dataService.projects().filter(p => p.clientId === client.id);
+  });
 
   constructor() {
     effect(() => {
@@ -156,7 +164,7 @@ export class PublicSupportComponent {
   async submitTicket(e: Event) {
     e.preventDefault();
     const finalClient = this.form.client || this.dataService.currentUser()?.user_metadata?.['company'];
-    if (!finalClient || !this.form.title || !this.form.linkedProductId) return;
+    if (!finalClient || !this.form.title || !this.form.linkedProjectId) return;
 
     this.isSubmitting.set(true);
 
@@ -168,19 +176,19 @@ export class PublicSupportComponent {
       else if (analysis.priority === 'Alta') sla = 4;
       else if (analysis.priority === 'Média') sla = 8;
 
-      this.dataService.addTicket({
+      this.dataService.addTicketAndCheckClient({
         title: this.form.title,
         client: finalClient,
         description: this.form.description,
         priority: analysis.priority as TicketPriority,
-        linkedProductId: this.form.linkedProductId,
+        linkedProjectId: this.form.linkedProjectId,
         slaHours: sla,
         clientEmail: this.form.clientEmail
       });
 
       this.successMessage.set(`Chamado recebido e classificado por nossa IA.<br>SLA de Resposta: <strong>${sla} Horas</strong>.<br>Acompanhe seu email para atualizações.`);
       
-      this.form = { client: finalClient, title: '', description: '', linkedProductId: '', clientEmail: this.form.clientEmail };
+      this.form = { client: finalClient, title: '', description: '', linkedProjectId: '', clientEmail: this.form.clientEmail };
       setTimeout(() => {
         this.successMessage.set('');
         if (!this.dataService.currentUser()) this.back.emit();
