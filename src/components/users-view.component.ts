@@ -91,6 +91,10 @@ export class UsersViewComponent {
 
     try {
       await this.dataService.inviteUser(this.inviteEmail, this.inviteRole, this.inviteCompany);
+      await this.dataService.notifyTeam(
+        `Novo Colaborador Convidado: ${this.inviteEmail}`,
+        `Papel: ${this.inviteRole}\nEmpresa: ${this.inviteCompany || 'Konig Systems'}`
+      );
       this.successMessage.set(`Convite enviado para ${this.inviteEmail} com sucesso!`);
       this.inviteEmail = '';
       this.inviteCompany = '';

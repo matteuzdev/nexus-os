@@ -117,10 +117,10 @@ import { AiService, AgentName } from '../services/ai.service';
         <div class="p-6 border-t border-zinc-800 bg-zinc-900/50 shrink-0">
           <form (submit)="send($event)" class="relative group">
             <div class="absolute inset-0 bg-indigo-500/5 blur-xl group-focus-within:bg-indigo-500/10 transition-all rounded-full"></div>
-            <input name="chatInput" [(ngModel)]="newMessage" [disabled]="isThinking()"
+            <input name="chatInput" [(ngModel)]="newMessage" [disabled]="isThinking()" (keydown.enter)="send($event)"
               class="relative w-full bg-zinc-950 border border-zinc-800 rounded-2xl p-4 pr-14 text-sm text-white focus:border-indigo-500 outline-none transition-all placeholder:text-zinc-800 font-medium disabled:opacity-50"
               [placeholder]="chatMode() === 'private' ? 'Comando privado para Orion...' : 'Falar com o squad... Mencione @Ana, @Carla ou @Lucas'">
-            <button type="submit" [disabled]="isThinking() || !newMessage.trim()" class="absolute right-3 top-2.5 p-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-500 transition-all active:scale-90 shadow-lg shadow-indigo-500/20 disabled:opacity-50">
+            <button type="button" (click)="send($event)" [disabled]="isThinking() || !newMessage.trim()" class="absolute right-3 top-2.5 p-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-500 transition-all active:scale-90 shadow-lg shadow-indigo-500/20 disabled:opacity-50">
               <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
             </button>
           </form>

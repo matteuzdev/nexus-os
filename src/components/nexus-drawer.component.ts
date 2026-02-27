@@ -281,8 +281,15 @@ export class NexusDrawerComponent {
     input.value = '';
   }
 
-  triggerAction(action: string) {
-    alert(`Automação Nexus: Disparando ${action} para ${this.asLead().contact}...`);
-    this.dataService.sendMessage(`Auto-Growth: ${action} disparado para o lead ${this.asLead().company}.`, 'Nexus AI');
+  async triggerAction(action: string) {
+    const lead = this.asLead();
+    alert(`Automação Nexus: Disparando ${action} para ${lead.contact}...`);
+    
+    await this.dataService.notifyTeam(
+      `Ação de CRM: ${action} enviada para ${lead.company}`,
+      `Lead: ${lead.contact}\nE-mail: ${lead.email}\nStatus Atual: ${lead.status}`
+    );
+    
+    this.dataService.sendMessage(`Auto-Growth: ${action} disparado para o lead ${lead.company}.`, 'Nexus AI');
   }
 }

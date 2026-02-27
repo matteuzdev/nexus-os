@@ -604,6 +604,18 @@ export class DataService {
     }]);
   }
 
+  /**
+   * Envia notificações importantes (leads, convites, alertas) diretamente para o GitHub
+   * via GitHub Issues/Events (simulando disparo de e-mail para o time)
+   */
+  async notifyTeam(title: string, body: string) {
+    console.log(`[GitHub Notification] ${title}: ${body}`);
+    // No futuro, aqui chamamos a API do GitHub para criar uma Issue automática
+    // fetch('https://api.github.com/repos/matteuzdev/nexus-os/issues', { ... })
+    await this.sendMessage(`[NOTIFICAÇÃO SISTEMA] ${title}. Ver detalhes no repositório.`, 'Nexus System', true);
+    return true;
+  }
+
   async addXP(memberId: string, amount: number) {
     const { data } = await this.supabase.from('squad_members').select('*').eq('id', memberId).single();
     if (data) {
