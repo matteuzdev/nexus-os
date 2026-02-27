@@ -165,9 +165,7 @@ export class DataService {
   private handleAuthSession(session: any) {
     if (session?.user) {
       this.currentUser.set(session.user);
-      // Override temporário para o CEO Matteuz ter acesso total
-      const isAdminEmail = session.user.email === 'hiantomateus@gmail.com';
-      const role = isAdminEmail ? 'admin' : (session.user.user_metadata?.['role'] || 'client');
+      const role = session.user.user_metadata?.['role'] || 'client';
       this.userRole.set(role as 'admin' | 'client');
     } else {
       this.currentUser.set(null);
