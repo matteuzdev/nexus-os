@@ -81,6 +81,18 @@ import { NexusDrawerComponent } from './nexus-drawer.component';
                   </div>
                 </div>
 
+                @if (getSelectedProductBlueprint()) {
+                  <div class="p-6 bg-indigo-600/5 border border-indigo-500/20 rounded-3xl space-y-3">
+                    <h3 class="text-[10px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2">
+                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                      Contexto do Sistema (Blueprint)
+                    </h3>
+                    <p class="text-xs text-indigo-200/70 font-mono leading-relaxed bg-zinc-950/50 p-4 rounded-xl border border-indigo-500/10">
+                      {{ getSelectedProductBlueprint() }}
+                    </p>
+                  </div>
+                }
+
                 <!-- QA Analysis Section -->
                 <div class="p-6 bg-emerald-600/5 border border-emerald-500/20 rounded-3xl space-y-4">
                   <div class="flex justify-between items-center">
@@ -221,6 +233,12 @@ export class SupportViewComponent {
     }
   }
 
+  getSelectedProductBlueprint(): string {
+    if (!this.selectedTicket()) return '';
+    const prod = this.dataService.products().find(p => p.id === this.selectedTicket()!.linkedProductId);
+    return prod?.blueprint || '';
+  }
+
   escalate() {
     if (this.selectedTicket()) {
       // 1. Escalate to DB
@@ -242,7 +260,13 @@ export class SupportViewComponent {
   async generateQASteps() {
     if (this.selectedTicket() && this.aiService.hasKey()) {
       this.isAnalyzing.set(true);
-      const steps = await this.aiService.generateReproductionSteps(this.selectedTicket()!.description);
+      const blueprint = this.getSelectedProductBlueprint();
+      const steps = await this.aiService.chatWithAgent(
+        'carla', 
+        `Analise este ticket: ${this.selectedTicket()!.description}`, 
+        `Ticket ID: ${this.selectedTicket()!.id}. Cliente: ${this.selectedTicket()!.client}`,
+        blueprint
+      );
       
       const updatedTicket = { ...this.selectedTicket()!, reproductionSteps: steps };
       this.selectedTicket.set(updatedTicket);

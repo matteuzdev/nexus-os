@@ -55,12 +55,13 @@ export class AiService {
    * Dá vida aos agentes da Konig Systems.
    * Permite conversar com a Ana, Carla, Lucas ou Orion com suas personalidades reais injetadas.
    */
-  async chatWithAgent(agent: AgentName, message: string, context: string = ''): Promise<string> {
+  async chatWithAgent(agent: AgentName, message: string, context: string = '', blueprint: string = ''): Promise<string> {
     if (!this.ai) return '[Aviso: IA Offline. Configure a chave Gemini 2.0 no LocalStorage.]';
 
     try {
       const systemInstruction = AGENT_PERSONAS[agent];
-      const prompt = `Contexto atual da Agência:\n${context}\n\nMensagem recebida:\n"${message}"\n\nResponda agora incorporando a sua persona:`;
+      const blueprintContext = blueprint ? `\nMAPA TÉCNICO DO SISTEMA DO CLIENTE:\n${blueprint}\n` : '';
+      const prompt = `Contexto atual da Agência:\n${context}${blueprintContext}\n\nMensagem recebida:\n"${message}"\n\nResponda agora incorporando a sua persona:`;
 
       const response = await this.ai.models.generateContent({
         model: 'gemini-2.5-flash',

@@ -151,6 +151,14 @@ import { DataService, Lead, Task, Ticket, Client } from '../services/data.servic
                       <label class="text-[10px] text-zinc-500 uppercase font-black block mb-1">Notas da SDR</label>
                       <textarea [(ngModel)]="asLead().investigation.notes" rows="4" placeholder="Observações livres da investigação..." class="w-full bg-zinc-950/50 border border-zinc-800 rounded-lg p-3 text-sm text-zinc-300 outline-none focus:border-indigo-500 resize-none"></textarea>
                     </div>
+
+                    <div>
+                      <label class="text-[10px] text-indigo-400 uppercase font-black block mb-1 flex items-center gap-2">
+                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                        Blueprint Neural (Contexto para IA)
+                      </label>
+                      <textarea [(ngModel)]="data.blueprint" rows="6" placeholder="Descreva a arquitetura visual, cores, botões e fluxo para que as IAs 'lembrem' deste projeto..." class="w-full bg-indigo-500/5 border border-indigo-500/20 rounded-lg p-3 text-xs text-indigo-200 outline-none focus:border-indigo-500 resize-none font-mono"></textarea>
+                    </div>
                   </div>
                 </div>
               }

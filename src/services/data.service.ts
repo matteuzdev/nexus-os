@@ -15,6 +15,7 @@ export interface Product {
   version: string;
   revenue: number;
   nextAction: string;
+  blueprint?: string; // Mapa mental/técnico do sistema para os agentes
 }
 
 export interface TaskComment {
