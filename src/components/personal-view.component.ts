@@ -11,7 +11,7 @@ import { DataService, PersonalTask } from '../services/data.service';
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 h-full overflow-hidden">
       <!-- ADHD Board (Goals & Tasks) -->
       <div class="lg:col-span-2 flex flex-col space-y-6 overflow-y-auto custom-scrollbar pr-2 pb-8">
-        <header class="flex items-center justify-between">
+        <header class="flex items-center justify-between shrink-0">
           <div>
             <h3 class="text-3xl font-black text-white uppercase tracking-tighter">My Focus Space</h3>
             <p class="text-xs font-mono text-zinc-500 mt-1">Organização anti-TDAH. Apenas o que importa hoje.</p>

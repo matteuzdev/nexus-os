@@ -153,7 +153,8 @@ export class DataService {
   private handleAuthSession(session: any) {
     if (session?.user) {
       this.currentUser.set(session.user);
-      this.userRole.set(session.user.user_metadata?.role || 'client'); // Default to client if not specified
+      const role = session.user.user_metadata?.['role'] || 'client';
+      this.userRole.set(role as 'admin' | 'client');
     } else {
       this.currentUser.set(null);
       this.userRole.set(null);
@@ -354,11 +355,12 @@ export class DataService {
   );
 
   // --- CRUD: PERSONAL TASKS ---
-  async addPersonalTask(task: Omit<PersonalTask, 'id' | 'createdAt'>) {
+  async addPersonalTask(task: Partial<PersonalTask>) {
     await this.supabase.from('personal_tasks').insert([{
       title: task.title,
-      is_completed: task.isCompleted,
-      type: task.type
+      is_completed: task.isCompleted || false,
+      status: task.status || 'A Fazer',
+      type: task.type || 'Micro-tarefa'
     }]);
   }
 
@@ -371,6 +373,14 @@ export class DataService {
 
   async deletePersonalTask(id: string) {
     await this.supabase.from('personal_tasks').delete().eq('id', id);
+  }
+
+  async updatePersonalTaskStatus(id: string, status: 'A Fazer' | 'Fazendo' | 'Concluído') {
+    const isCompleted = status === 'Concluído';
+    await this.supabase.from('personal_tasks').update({ 
+      status, 
+      is_completed: isCompleted 
+    }).eq('id', id);
   }
 
   // --- CRUD: LEADS ---

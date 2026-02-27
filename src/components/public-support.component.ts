@@ -1,4 +1,4 @@
-import { Component, inject, signal, output } from '@angular/core';
+import { Component, inject, signal, effect, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DataService, TicketPriority } from '../services/data.service';
@@ -136,18 +136,19 @@ export class PublicSupportComponent {
     client: '',
     title: '',
     description: '',
-    linkedProductId: ''
+    linkedProductId: '',
+    clientEmail: ''
   };
 
   successMessage = signal('');
   isSubmitting = signal(false);
 
   constructor() {
-    import { effect } from '@angular/core';
     effect(() => {
       const user = this.dataService.currentUser();
       if (user) {
         this.form.client = user.user_metadata?.['company'] || '';
+        this.form.clientEmail = user.email || '';
       }
     });
   }
@@ -173,12 +174,13 @@ export class PublicSupportComponent {
         description: this.form.description,
         priority: analysis.priority as TicketPriority,
         linkedProductId: this.form.linkedProductId,
-        slaHours: sla
+        slaHours: sla,
+        clientEmail: this.form.clientEmail
       });
 
       this.successMessage.set(`Chamado recebido e classificado por nossa IA.<br>SLA de Resposta: <strong>${sla} Horas</strong>.<br>Acompanhe seu email para atualizações.`);
       
-      this.form = { client: finalClient, title: '', description: '', linkedProductId: '' };
+      this.form = { client: finalClient, title: '', description: '', linkedProductId: '', clientEmail: this.form.clientEmail };
       setTimeout(() => {
         this.successMessage.set('');
         if (!this.dataService.currentUser()) this.back.emit();

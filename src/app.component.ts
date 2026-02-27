@@ -11,8 +11,10 @@ import { SalesViewComponent } from './components/sales-view.component';
 import { SquadsViewComponent } from './components/squads-view.component';
 import { PersonalViewComponent } from './components/personal-view.component';
 import { PublicSupportComponent } from './components/public-support.component';
+import { SettingsViewComponent } from './components/settings-view.component';
+import { UsersViewComponent } from './components/users-view.component';
 
-type View = 'public' | 'public-support' | 'dashboard' | 'portfolio' | 'kanban' | 'support' | 'sales' | 'squads' | 'personal';
+type View = 'public' | 'public-support' | 'auth' | 'dashboard' | 'portfolio' | 'kanban' | 'support' | 'sales' | 'squads' | 'personal' | 'settings' | 'users';
 
 @Component({
   selector: 'app-root',
@@ -28,7 +30,9 @@ type View = 'public' | 'public-support' | 'dashboard' | 'portfolio' | 'kanban' |
     SalesViewComponent,
     SquadsViewComponent,
     PersonalViewComponent,
-    PublicSupportComponent
+    PublicSupportComponent,
+    SettingsViewComponent,
+    UsersViewComponent
   ],
   template: `
     @if (currentView() === 'public') {
@@ -110,17 +114,29 @@ type View = 'public' | 'public-support' | 'dashboard' | 'portfolio' | 'kanban' |
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
               Portfólio
             </button>
+
+            @if (dataService.userRole() === 'admin') {
+              <div class="pt-4 mt-4 border-t border-zinc-800">
+                <p class="px-3 text-[10px] uppercase font-black text-zinc-600 tracking-widest mb-2">Admin Tools</p>
+                <button (click)="currentView.set('users')" 
+                  class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all"
+                  [class]="currentView() === 'users' ? 'bg-indigo-600/10 text-indigo-400 border border-indigo-500/20' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'">
+                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                  Gestão de Acessos
+                </button>
+              </div>
+            }
           </nav>
 
           <!-- User Profile & Exit -->
           <div class="p-4 border-t border-zinc-800 space-y-4">
-            <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center font-bold text-xs">
+            <div (click)="currentView.set('settings')" class="flex items-center gap-3 cursor-pointer group p-2 hover:bg-zinc-800 rounded-xl transition-all">
+              <div class="w-10 h-10 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center font-bold text-xs group-hover:border-indigo-500 transition-colors">
                 {{ dataService.currentUser()?.user_metadata?.['full_name']?.substring(0,1) || 'U' }}
               </div>
               <div class="flex flex-col">
-                <span class="text-xs font-bold text-white">{{ dataService.currentUser()?.user_metadata?.['full_name'] || 'Usuário' }}</span>
-                <span class="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">{{ dataService.userRole() || 'Perfil' }}</span>
+                <span class="text-xs font-bold text-white group-hover:text-indigo-400 transition-colors">{{ dataService.currentUser()?.user_metadata?.['full_name'] || 'Usuário' }}</span>
+                <span class="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">{{ dataService.userRole()?.toUpperCase() || 'CEO' }}</span>
               </div>
             </div>
             <button (click)="logout()" class="w-full text-[10px] uppercase font-bold text-zinc-500 hover:text-zinc-300 py-2 border border-zinc-800 hover:bg-zinc-800 rounded transition-colors flex items-center justify-center gap-2">
@@ -143,6 +159,8 @@ type View = 'public' | 'public-support' | 'dashboard' | 'portfolio' | 'kanban' |
                 @case ('portfolio') { Portfólio de Produtos }
                 @case ('kanban') { Board de Engenharia }
                 @case ('support') { Central de Suporte (QA) }
+                @case ('settings') { Minha Conta }
+                @case ('users') { Gestão de Acessos & CMS }
               }
             </h2>
             <div class="flex items-center gap-4">
@@ -163,9 +181,11 @@ type View = 'public' | 'public-support' | 'dashboard' | 'portfolio' | 'kanban' |
               @case ('dashboard') { <app-dashboard-view class="animate-in fade-in slide-in-from-bottom-2 duration-500"/> }
               @case ('sales') { <app-sales-view class="animate-in fade-in slide-in-from-bottom-2 duration-500 h-full block"/> }
               @case ('squads') { <app-squads-view class="animate-in fade-in slide-in-from-bottom-2 duration-500 h-full block"/> }
-              @case ('portfolio') { <app-portfolio-view class="animate-in fade-in slide-in-from-bottom-2 duration-500"/> }
+              @case ('portfolio') { <app-portfolio-view class="animate-in fade-in slide-in-from-bottom-2 duration-500 h-full block"/> }
               @case ('kanban') { <app-kanban-view class="animate-in fade-in slide-in-from-bottom-2 duration-500 h-full block"/> }
               @case ('support') { <app-support-view class="animate-in fade-in slide-in-from-bottom-2 duration-500 h-full block"/> }
+              @case ('settings') { <app-settings-view class="animate-in fade-in slide-in-from-bottom-2 duration-500 h-full block"/> }
+              @case ('users') { <app-users-view class="animate-in fade-in slide-in-from-bottom-2 duration-500 h-full block"/> }
             }
           </div>
         </main>
@@ -190,11 +210,16 @@ export class AppComponent {
 
       if (user) {
         if (role === 'admin') {
-          this.currentView.set('dashboard');
+          // Se já estiver logado e tentar ir para auth ou public, vai pro dashboard
+          if (this.currentView() === 'auth' || this.currentView() === 'public') {
+            this.currentView.set('dashboard');
+          }
         } else {
+          // Se for cliente, trava no portal de suporte
           this.currentView.set('public-support');
         }
       } else {
+        // Se deslogar, volta pro público, a menos que esteja no suporte público ou tentando logar
         if (this.currentView() !== 'public' && this.currentView() !== 'public-support' && this.currentView() !== 'auth') {
            this.currentView.set('public');
         }
