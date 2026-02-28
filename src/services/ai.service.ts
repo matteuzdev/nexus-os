@@ -23,8 +23,15 @@ export class AiService {
   }
 
   private async initializeKey() {
+    // 1. Tenta pegar das variáveis de ambiente do Build (Vercel)
+    const envKey = (import.meta as any).env?.['VITE_GEMINI_API_KEY'] || (import.meta as any).env?.['GEMINI_API_KEY'];
+    if (envKey) {
+      this.configure(envKey);
+      return;
+    }
+
     try {
-      // Tenta o nome padrão solicitado pelo CEO
+      // 2. Tenta pegar do banco (Supabase)
       const dbKey = await this.dataService.getSecret('GEMINI_API_KEY');
       if (dbKey) {
         this.configure(dbKey);
@@ -32,6 +39,7 @@ export class AiService {
       }
     } catch (e) {}
 
+    // 3. Fallback pro LocalStorage
     const localKey = localStorage.getItem('GEMINI_API_KEY');
     if (localKey) this.configure(localKey);
   }

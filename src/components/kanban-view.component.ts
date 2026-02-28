@@ -19,7 +19,7 @@ import { NexusModalComponent } from './nexus-modal.component';
             <p class="text-xs font-mono text-zinc-500 mt-1">Status: <span class="text-indigo-400 font-bold">{{ dataService.activeTasks() }} tarefas em sprint</span></p>
           </div>
 
-          <!-- Jira-style Filters -->
+          <!-- Advanced Filters -->
           <div class="flex items-center gap-3 flex-wrap">
             <div class="relative">
               <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
@@ -27,11 +27,19 @@ import { NexusModalComponent } from './nexus-modal.component';
             </div>
             
             <select [(ngModel)]="priorityFilter" class="bg-zinc-900 border border-zinc-800 rounded-xl py-2.5 px-4 text-[10px] font-black uppercase text-zinc-400 outline-none focus:border-indigo-500 appearance-none cursor-pointer">
-              <option value="ALL">Todas Prioridades</option>
+              <option value="ALL">Prioridades</option>
               <option value="Urgente">Urgente</option>
               <option value="Alta">Alta</option>
               <option value="Média">Média</option>
               <option value="Baixa">Baixa</option>
+            </select>
+
+            <select [(ngModel)]="typeFilter" class="bg-zinc-900 border border-zinc-800 rounded-xl py-2.5 px-4 text-[10px] font-black uppercase text-zinc-400 outline-none focus:border-indigo-500 appearance-none cursor-pointer">
+              <option value="ALL">Todos Tipos</option>
+              <option value="Feature">Feature</option>
+              <option value="Bug">Bug</option>
+              <option value="Automação">Automação</option>
+              <option value="Melhoria">Melhoria</option>
             </select>
 
             <select [(ngModel)]="projectFilter" class="bg-zinc-900 border border-zinc-800 rounded-xl py-2.5 px-4 text-[10px] font-black uppercase text-zinc-400 outline-none focus:border-indigo-500 appearance-none cursor-pointer max-w-[150px]">
@@ -49,7 +57,7 @@ import { NexusModalComponent } from './nexus-modal.component';
         </button>
       </div>
 
-      <!-- Kanban Board -->
+      <!-- Board Area -->
       <div class="flex-1 overflow-x-auto pb-6 custom-scrollbar flex gap-6 items-start">
         @for (col of columns; track col) {
           <div 
@@ -62,7 +70,7 @@ import { NexusModalComponent } from './nexus-modal.component';
             <!-- Column Header -->
             <div class="p-5 border-b border-zinc-800 bg-zinc-900 flex justify-between items-center sticky top-0 z-10 select-none">
               <div class="flex items-center gap-3">
-                <div class="w-2 h-2 rounded-full shadow-[0_0_8px_rgba(99,102,241,0.5)]" [ngClass]="getColumnColor(col)"></div>
+                <div class="w-2 h-2 rounded-full" [ngClass]="getColumnColor(col)"></div>
                 <span class="font-black text-[10px] uppercase tracking-[0.2em] text-zinc-400">{{ col }}</span>
               </div>
               <span class="bg-zinc-800 text-zinc-500 text-[10px] px-2.5 py-0.5 rounded-full font-bold">
@@ -79,7 +87,6 @@ import { NexusModalComponent } from './nexus-modal.component';
                   (dragstart)="onDragStart($event, task)"
                   (click)="openDetail(task)"
                 >
-                  
                   <div class="flex justify-between items-start mb-4">
                     <div class="flex flex-col gap-1">
                        <span class="text-[8px] font-black text-zinc-600 uppercase tracking-widest">#{{ task.id.substring(1, 6) }}</span>
@@ -105,9 +112,7 @@ import { NexusModalComponent } from './nexus-modal.component';
                       </div>
                       <span class="bg-indigo-500/10 text-indigo-400 text-[8px] font-black px-1.5 py-0.5 rounded border border-indigo-500/20 uppercase">{{ task.stack }}</span>
                     </div>
-                    <div class="flex items-center gap-2">
-                       <span class="text-[10px] font-black text-zinc-500">{{ task.points }} SP</span>
-                    </div>
+                    <span class="text-[10px] font-black text-zinc-500">{{ task.points }} SP</span>
                   </div>
                 </div>
               }
@@ -118,12 +123,7 @@ import { NexusModalComponent } from './nexus-modal.component';
     </div>
 
     <!-- Detail Drawer -->
-    <app-nexus-drawer 
-      [isOpen]="isDrawerOpen()" 
-      [type]="'task'" 
-      [data]="selectedTask()" 
-      (close)="isDrawerOpen.set(false)">
-    </app-nexus-drawer>
+    <app-nexus-drawer [isOpen]="isDrawerOpen()" [type]="'task'" [data]="selectedTask()" (close)="isDrawerOpen.set(false)"></app-nexus-drawer>
 
     <!-- New Task Modal -->
     <app-nexus-modal
@@ -199,17 +199,12 @@ export class KanbanViewComponent {
 
   searchTerm = '';
   priorityFilter = 'ALL';
+  typeFilter = 'ALL';
   projectFilter = 'ALL';
 
   newTask = {
-    title: '',
-    description: '',
-    type: 'Feature' as any,
-    priority: 'Média' as any,
-    category: 'Geral',
-    stack: 'N/A',
-    points: 1,
-    linkedProjectId: ''
+    title: '', description: '', type: 'Feature' as any, priority: 'Média' as any,
+    category: 'Geral', stack: 'N/A', points: 1, linkedProjectId: ''
   };
 
   getFilteredTasks(status: TaskStatus): Task[] {
@@ -217,15 +212,13 @@ export class KanbanViewComponent {
       const matchStatus = t.status === status;
       const matchSearch = t.title.toLowerCase().includes(this.searchTerm.toLowerCase());
       const matchPriority = this.priorityFilter === 'ALL' || t.priority === this.priorityFilter;
+      const matchType = this.typeFilter === 'ALL' || t.type === this.typeFilter;
       const matchProject = this.projectFilter === 'ALL' || t.linkedProjectId === this.projectFilter;
-      return matchStatus && matchSearch && matchPriority && matchProject;
+      return matchStatus && matchSearch && matchPriority && matchType && matchProject;
     });
   }
 
-  openDetail(task: Task) {
-    this.selectedTask.set({ ...task });
-    this.isDrawerOpen.set(true);
-  }
+  openDetail(task: Task) { this.selectedTask.set({ ...task }); this.isDrawerOpen.set(true); }
 
   async saveNewTask() {
     if (!this.newTask.title) return;
