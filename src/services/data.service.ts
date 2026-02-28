@@ -829,4 +829,15 @@ export class DataService {
     if (type === 'telegram') return !!s.integrations.telegramBotToken;
     return false;
   }
+
+  async getSecret(name: string): Promise<string | null> {
+    const { data, error } = await this.supabase
+      .from('nexus_secrets')
+      .select('value')
+      .eq('name', name)
+      .single();
+    
+    if (error || !data) return null;
+    return data.value;
+  }
 }
