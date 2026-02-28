@@ -65,7 +65,7 @@ import { AiService } from '../services/ai.service';
              Telegram Bridge
            </h4>
            <p class="text-[10px] text-zinc-400 mb-4">Sincronize a inteligência do Nexus com seu grupo de equipe.</p>
-           <button class="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-blue-500/20">
+           <button (click)="openTelegram()" class="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-blue-500/20">
              Abrir Grupo da Equipe
            </button>
         </div>
@@ -180,10 +180,8 @@ export class SquadsViewComponent {
 
     const senderName = this.dataService.currentUser()?.user_metadata?.['full_name'] || 'Matteuz (CEO)';
     
-    // 1. Send human message to Supabase
     await this.dataService.sendMessage(messageText, senderName, this.chatMode() === 'private');
 
-    // 2. Check for AI Mentions or Private Mode
     const lowerMsg = messageText.toLowerCase();
     let targetAgent: any = null;
 
@@ -206,6 +204,16 @@ export class SquadsViewComponent {
       } finally {
         this.isThinking.set(false);
       }
+    }
+  }
+
+  openTelegram() {
+    const chatId = this.dataService.settings().integrations.telegramChatId;
+    if (chatId) {
+      const cleanId = chatId.replace('-100', '');
+      window.open(`https://t.me/c/${cleanId}`, '_blank');
+    } else {
+      alert('⚠️ Configure o Chat ID do Telegram nas Configurações (Aba Minha Conta -> Integrações).');
     }
   }
 }

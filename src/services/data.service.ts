@@ -723,8 +723,30 @@ export class DataService {
   }
 
   async notifyTeam(title: string, body: string) {
-    console.log(`[GitHub Notification] ${title}: ${body}`);
+    console.log(`[Nexus Notification] ${title}: ${body}`);
     this.addNotification(title, body, 'info');
+
+    // Integração Real com Telegram
+    const s = this.settings();
+    if (s.integrations.telegramBotToken && s.integrations.telegramChatId) {
+      const text = `🔔 *${title}*\n\n${body}`;
+      const url = `https://api.telegram.org/bot${s.integrations.telegramBotToken}/sendMessage`;
+      
+      try {
+        await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: s.integrations.telegramChatId,
+            text: text,
+            parse_mode: 'Markdown'
+          })
+        });
+      } catch (err) {
+        console.error('Falha ao enviar para Telegram:', err);
+      }
+    }
+    
     return true;
   }
 
