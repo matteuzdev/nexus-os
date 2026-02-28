@@ -101,7 +101,11 @@ import { AiService } from '../services/ai.service';
               <!-- Avatar -->
               <div class="w-10 h-10 shrink-0 rounded-2xl bg-zinc-800 border border-zinc-700 flex items-center justify-center text-[10px] font-black text-indigo-400 group-hover:border-indigo-500 transition-all overflow-hidden shadow-lg">
                 @if (msg.senderId === 'ceo' && dataService.currentUser()?.user_metadata?.['avatar_url']) {
-                  <img [src]="dataService.currentUser()?.user_metadata?.['avatar_url']" class="w-full h-full object-cover">
+                  <img [src]="dataService.currentUser()?.user_metadata?.['avatar_url']" 
+                    (error)="avatarError = true" 
+                    *ngIf="!avatarError"
+                    class="w-full h-full object-cover">
+                  <span *ngIf="avatarError">{{ msg.senderName.substring(0,2).toUpperCase() }}</span>
                 } @else {
                   {{ msg.senderName.substring(0,2).toUpperCase() }}
                 }
@@ -162,6 +166,7 @@ export class SquadsViewComponent {
   chatMode = signal<'squad' | 'private'>('squad');
   isThinking = signal(false);
   thinkingAgent = '';
+  avatarError = false;
 
   filteredMessages = computed(() => {
     const msgs = this.dataService.messages();
