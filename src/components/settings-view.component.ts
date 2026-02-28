@@ -153,6 +153,7 @@ export class SettingsViewComponent {
   currentTheme = this.dataService.settings().theme;
   resendKey = this.dataService.settings().integrations.resendApiKey || '';
   waKey = this.dataService.settings().integrations.whatsappApiToken || '';
+  mcpServers = (this.dataService.settings().integrations.mcpServers || []).join(', ');
 
   loading = signal(false);
   successMessage = signal('');
@@ -203,12 +204,15 @@ export class SettingsViewComponent {
   saveIntegrations(e: Event) {
     e.preventDefault();
     const settings = this.dataService.settings();
+    const mcpArray = this.mcpServers.split(',').map(s => s.trim()).filter(s => s);
+
     this.dataService.updateSettings({
       ...settings,
       integrations: {
         ...settings.integrations,
         resendApiKey: this.resendKey,
-        whatsappApiToken: this.waKey
+        whatsappApiToken: this.waKey,
+        mcpServers: mcpArray
       }
     });
     this.successMessage.set('Integrações salvas no sistema.');

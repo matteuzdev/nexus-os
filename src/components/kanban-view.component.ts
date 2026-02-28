@@ -138,7 +138,7 @@ export class KanbanViewComponent {
         points: 1,
         status: 'Backlog',
         tag: 'Dev',
-        linkedProductId: ''
+        linkedProjectId: ''
       });
     }
   }

@@ -162,8 +162,8 @@ import { NexusDrawerComponent } from './nexus-drawer.component';
                   <h4 class="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-6">Metadados de Entrega</h4>
                   <div class="space-y-6">
                     <div>
-                      <p class="text-[8px] text-zinc-500 font-black uppercase mb-1">Produto Afetado</p>
-                      <p class="text-sm font-bold text-white">{{ dataService.getProductName(selectedTicket()!.linkedProductId) }}</p>
+                      <p class="text-[8px] text-zinc-500 font-black uppercase mb-1">Projeto Afetado</p>
+                      <p class="text-sm font-bold text-white">{{ dataService.getProjectName(selectedTicket()!.linkedProjectId) }}</p>
                     </div>
                     <div>
                       <p class="text-[8px] text-zinc-500 font-black uppercase mb-1">SLA de Resolução</p>
@@ -235,8 +235,8 @@ export class SupportViewComponent {
 
   getSelectedProductBlueprint(): string {
     if (!this.selectedTicket()) return '';
-    const prod = this.dataService.products().find(p => p.id === this.selectedTicket()!.linkedProductId);
-    return prod?.blueprint || '';
+    const proj = this.dataService.projects().find(p => p.id === this.selectedTicket()!.linkedProjectId);
+    return proj?.blueprint || '';
   }
 
   escalate() {

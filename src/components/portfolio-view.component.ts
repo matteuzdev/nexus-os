@@ -83,11 +83,11 @@ export class PortfolioViewComponent {
   }
 
   getTaskCount(productId: string): number {
-    return this.dataService.tasks().filter(t => t.linkedProductId === productId && t.status !== 'Concluído').length;
+    return this.dataService.tasks().filter(t => t.linkedProjectId === productId && t.status !== 'Concluído').length;
   }
 
   getTicketCount(productId: string): number {
-    return this.dataService.tickets().filter(t => t.linkedProductId === productId && t.status !== 'Resolvido').length;
+    return this.dataService.tickets().filter(t => t.linkedProjectId === productId && t.status !== 'Resolvido').length;
   }
 
   addProduct() {
