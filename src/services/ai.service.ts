@@ -45,7 +45,7 @@ export class AiService {
     try {
       this.ai = new GoogleGenAI({ apiKey });
       localStorage.setItem('NEXUS_GEMINY_KEY', apiKey);
-      console.log('[Nexus AI] Motor Gemini 2.0 Flash Inicializado.');
+      console.log('[Nexus AI] Motor Gemini 3.1 Flash Inicializado.');
     } catch (e) {
       console.error('Erro ao configurar Gemini AI:', e);
     }
@@ -64,7 +64,7 @@ export class AiService {
       const prompt = `Contexto:\n${context}${blueprintContext}\n\nMensagem: "${message}"\n\nResponda como sua persona:`;
 
       const response = await this.ai.models.generateContent({
-        model: 'gemini-2.0-flash', // Versão 2.0 Flash (A mais atual e funcional disponível no SDK)
+        model: 'gemini-3.1-flash', // Versão 3.1 Flash (A mais atual e funcional disponível no SDK)
         contents: prompt,
         config: {
           systemInstruction: systemInstruction,
@@ -83,7 +83,7 @@ export class AiService {
     if (!this.ai) return 'QA Offline.';
     try {
       const response = await this.ai.models.generateContent({
-        model: 'gemini-2.0-flash',
+        model: 'gemini-3.1-flash',
         contents: `Como QA, descreva os passos para reproduzir: "${clientDescription}"`,
         config: { systemInstruction: AGENT_PERSONAS.carla }
       });
@@ -97,7 +97,7 @@ export class AiService {
     if (!this.ai) return { priority: 'Média', summary: 'IA Offline.' };
     try {
       const prompt = `Analise o ticket e retorne JSON {"priority": "Baixa"|"Média"|"Alta"|"Crítica", "summary": "15 palavras"}.\n\nTicket: "${description}"`;
-      const response = await this.ai.models.generateContent({ model: 'gemini-2.0-flash', contents: prompt });
+      const response = await this.ai.models.generateContent({ model: 'gemini-3.1-flash', contents: prompt });
       const text = response.text || '{}';
       return JSON.parse(text.replace(/```json/g, '').replace(/```/g, '').trim());
     } catch (err) {
