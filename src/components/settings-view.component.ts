@@ -8,11 +8,11 @@ import { DataService } from '../services/data.service';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="max-w-3xl mx-auto h-full overflow-y-auto custom-scrollbar pr-2 space-y-8">
+    <div class="max-w-3xl mx-auto h-full overflow-y-auto custom-scrollbar pr-2 space-y-8 pb-20">
       
       <header>
         <h3 class="text-3xl font-black text-white uppercase tracking-tighter">Meu Perfil</h3>
-        <p class="text-xs font-mono text-zinc-500 mt-1">Gerencie suas credenciais e informações pessoais.</p>
+        <p class="text-xs font-mono text-zinc-500 mt-1">Gerencie suas credenciais, avatar e integrações.</p>
       </header>
 
       @if (successMessage()) {
@@ -31,16 +31,25 @@ import { DataService } from '../services/data.service';
         <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 shadow-xl">
           <h4 class="text-sm font-black text-white uppercase tracking-widest mb-6 border-b border-zinc-800 pb-4">Dados Pessoais</h4>
           <form (submit)="updateProfile($event)" class="space-y-6">
-            <div>
-              <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">E-mail (Login)</label>
-              <input type="email" [value]="dataService.currentUser()?.email" disabled
-                class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-zinc-500 outline-none cursor-not-allowed">
-              <p class="text-[9px] text-zinc-600 mt-1">O e-mail não pode ser alterado por aqui.</p>
+            <div class="flex justify-center mb-6">
+               <div class="w-24 h-24 rounded-full bg-zinc-800 border-2 border-zinc-700 overflow-hidden flex items-center justify-center">
+                 @if (avatarUrl) {
+                   <img [src]="avatarUrl" class="w-full h-full object-cover">
+                 } @else {
+                   <span class="text-2xl font-black text-zinc-600">{{ fullName.substring(0,1) }}</span>
+                 }
+               </div>
             </div>
 
             <div>
               <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">Nome Completo</label>
               <input type="text" [(ngModel)]="fullName" name="fullName" required
+                class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-white focus:border-indigo-500 outline-none transition-colors">
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">URL da Foto (Avatar)</label>
+              <input type="text" [(ngModel)]="avatarUrl" name="avatarUrl" placeholder="https://..."
                 class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-white focus:border-indigo-500 outline-none transition-colors">
             </div>
 
@@ -78,7 +87,6 @@ import { DataService } from '../services/data.service';
         <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 shadow-xl">
           <h4 class="text-sm font-black text-white uppercase tracking-widest mb-6 border-b border-zinc-800 pb-4">Aparência do Nexus OS</h4>
           <div class="space-y-4">
-            <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Tema Global</p>
             <div class="grid grid-cols-2 gap-4">
               <button (click)="changeTheme('nexus-dark')" [class.border-indigo-500]="currentTheme === 'nexus-dark'" class="p-4 bg-zinc-950 border border-zinc-800 rounded-xl hover:border-indigo-500/50 transition-all flex flex-col items-center gap-2">
                 <div class="w-6 h-6 rounded-full bg-zinc-900 border-2 border-indigo-500"></div>
@@ -107,7 +115,7 @@ import { DataService } from '../services/data.service';
             <div>
               <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2 flex justify-between">
                 <span>Resend API Key (E-mail)</span>
-                @if (resendKey) { <span class="text-emerald-500">Conectado</span> }
+                @if (resendKey) { <span class="text-emerald-500 text-[8px]">Ativo</span> }
               </label>
               <input type="password" [(ngModel)]="resendKey" name="resendKey" placeholder="re_..."
                 class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-white focus:border-indigo-500 outline-none transition-colors">
@@ -115,21 +123,20 @@ import { DataService } from '../services/data.service';
 
             <div>
               <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2 flex justify-between">
-                <span>WhatsApp API Token</span>
-                @if (waKey) { <span class="text-emerald-500">Conectado</span> }
+                <span>Telegram Bot Token</span>
+                @if (tgToken) { <span class="text-emerald-500 text-[8px]">Ativo</span> }
               </label>
-              <input type="password" [(ngModel)]="waKey" name="waKey" placeholder="EAA..."
+              <input type="password" [(ngModel)]="tgToken" name="tgToken" placeholder="7823...:AAF..."
                 class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-white focus:border-indigo-500 outline-none transition-colors">
             </div>
 
-            <div class="pt-4 border-t border-zinc-800">
-              <label class="block text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2 flex items-center gap-2">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                Model Context Protocol (MCP) Servers
+            <div>
+              <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2 flex justify-between">
+                <span>Telegram Chat ID</span>
+                @if (tgChatId) { <span class="text-emerald-500 text-[8px]">Configurado</span> }
               </label>
-              <p class="text-[9px] text-zinc-500 mb-2 font-mono">URLs separadas por vírgula para fornecer contexto avançado aos Agentes (ex: WebMCP, Github MCP).</p>
-              <textarea [(ngModel)]="mcpServers" name="mcpServers" rows="2" placeholder="http://localhost:3000/mcp, https://api.exemplo.com/mcp"
-                class="w-full bg-indigo-500/5 border border-indigo-500/20 rounded-xl p-4 text-xs text-indigo-200 focus:border-indigo-500 outline-none transition-colors resize-none font-mono"></textarea>
+              <input type="text" [(ngModel)]="tgChatId" name="tgChatId" placeholder="-100..."
+                class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-white focus:border-indigo-500 outline-none transition-colors">
             </div>
 
             <button type="submit" [disabled]="loading()"
@@ -148,12 +155,13 @@ export class SettingsViewComponent {
   
   fullName = this.dataService.currentUser()?.user_metadata['full_name'] || '';
   phone = this.dataService.currentUser()?.user_metadata['phone'] || '';
+  avatarUrl = this.dataService.currentUser()?.user_metadata['avatar_url'] || '';
   newPassword = '';
 
   currentTheme = this.dataService.settings().theme;
   resendKey = this.dataService.settings().integrations.resendApiKey || '';
-  waKey = this.dataService.settings().integrations.whatsappApiToken || '';
-  mcpServers = (this.dataService.settings().integrations.mcpServers || []).join(', ');
+  tgToken = this.dataService.settings().integrations.telegramBotToken || '';
+  tgChatId = this.dataService.settings().integrations.telegramChatId || '';
 
   loading = signal(false);
   successMessage = signal('');
@@ -164,7 +172,7 @@ export class SettingsViewComponent {
     this.loading.set(true);
     this.clearMessages();
     try {
-      await this.dataService.updateProfile(this.fullName, this.phone);
+      await this.dataService.updateProfile(this.fullName, this.phone, this.avatarUrl);
       this.successMessage.set('Perfil atualizado com sucesso!');
     } catch (err: any) {
       this.errorMessage.set(err.message || 'Erro ao atualizar perfil.');
@@ -193,29 +201,27 @@ export class SettingsViewComponent {
     }
   }
 
-  changeTheme(theme: 'nexus-dark' | 'neon-cyber' | 'ruby-red' | 'emerald-city') {
+  changeTheme(theme: any) {
     this.currentTheme = theme;
     const settings = this.dataService.settings();
     this.dataService.updateSettings({ ...settings, theme });
-    this.successMessage.set('Tema aplicado. Atualize a página se necessário.');
+    this.successMessage.set('Tema aplicado.');
     setTimeout(() => this.clearMessages(), 3000);
   }
 
   saveIntegrations(e: Event) {
     e.preventDefault();
     const settings = this.dataService.settings();
-    const mcpArray = this.mcpServers.split(',').map(s => s.trim()).filter(s => s);
-
     this.dataService.updateSettings({
       ...settings,
       integrations: {
         ...settings.integrations,
         resendApiKey: this.resendKey,
-        whatsappApiToken: this.waKey,
-        mcpServers: mcpArray
+        telegramBotToken: this.tgToken,
+        telegramChatId: this.tgChatId
       }
     });
-    this.successMessage.set('Integrações salvas no sistema.');
+    this.successMessage.set('Integrações salvas.');
     setTimeout(() => this.clearMessages(), 3000);
   }
 

@@ -142,8 +142,12 @@ type View = 'public' | 'public-support' | 'auth' | 'dashboard' | 'portfolio' | '
           <!-- User Profile & Exit -->
           <div class="p-4 border-t border-zinc-800 space-y-4">
             <div (click)="currentView.set('settings')" class="flex items-center gap-3 cursor-pointer group p-2 hover:bg-zinc-800 rounded-xl transition-all">
-              <div class="w-10 h-10 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center font-bold text-xs group-hover:border-indigo-500 transition-colors">
-                {{ dataService.currentUser()?.user_metadata?.['full_name']?.substring(0,1) || 'U' }}
+              <div class="w-10 h-10 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center font-bold text-xs group-hover:border-indigo-500 transition-colors overflow-hidden">
+                @if (dataService.currentUser()?.user_metadata?.['avatar_url']) {
+                  <img [src]="dataService.currentUser()?.user_metadata?.['avatar_url']" class="w-full h-full object-cover">
+                } @else {
+                  {{ dataService.currentUser()?.user_metadata?.['full_name']?.substring(0,1) || 'U' }}
+                }
               </div>
               <div class="flex flex-col">
                 <span class="text-xs font-bold text-white group-hover:text-indigo-400 transition-colors">{{ dataService.currentUser()?.user_metadata?.['full_name'] || 'Usuário' }}</span>
@@ -168,14 +172,55 @@ type View = 'public' | 'public-support' | 'auth' | 'dashboard' | 'portfolio' | '
                 @case ('clients') { Gestão de Clientes }
                 @case ('sales') { Funil de Vendas & CRM }
                 @case ('squads') { Squads & Gestão de Equipe }
-                @case ('portfolio') { Portfólio de Produtos }
+                @case ('portfolio') { Portfólio de Serviços }
+                @case ('automations') { Automações & Regras de IA }
                 @case ('kanban') { Board de Engenharia }
                 @case ('support') { Central de Suporte (QA) }
                 @case ('settings') { Minha Conta }
                 @case ('users') { Colaboradores }
               }
             </h2>
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-6">
+               <!-- Notifications Bell -->
+               <div class="relative group">
+                 <button (click)="dataService.markAllAsRead()" class="p-2 text-zinc-400 hover:text-white transition-colors relative">
+                   <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                   @if (dataService.unreadNotificationsCount() > 0) {
+                     <span class="absolute top-1.5 right-1.5 w-4 h-4 bg-rose-500 text-[8px] font-black text-white flex items-center justify-center rounded-full border-2 border-zinc-950 animate-bounce">
+                       {{ dataService.unreadNotificationsCount() }}
+                     </span>
+                   }
+                 </button>
+                 
+                 <!-- Notifications Panel (Hover) -->
+                 <div class="absolute right-0 top-full mt-2 w-80 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl opacity-0 translate-y-4 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all z-50 overflow-hidden">
+                    <div class="p-4 border-b border-zinc-800 bg-zinc-950/50 flex justify-between items-center">
+                      <span class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Notificações</span>
+                      <button (click)="dataService.markAllAsRead()" class="text-[8px] font-black text-indigo-400 uppercase hover:text-indigo-300">Limpar tudo</button>
+                    </div>
+                    <div class="max-h-96 overflow-y-auto custom-scrollbar">
+                      @for (n of dataService.notifications(); track n.id) {
+                        <div class="p-4 border-b border-zinc-800/50 hover:bg-zinc-800/30 transition-colors" [class.opacity-50]="n.read">
+                          <div class="flex gap-3">
+                            <div class="w-2 h-2 rounded-full mt-1.5 shrink-0" 
+                              [class.bg-blue-500]="n.type === 'info'" 
+                              [class.bg-emerald-500]="n.type === 'success'"
+                              [class.bg-rose-500]="n.type === 'error'"></div>
+                            <div>
+                              <p class="text-xs font-bold text-white mb-1">{{ n.title }}</p>
+                              <p class="text-[10px] text-zinc-500 leading-relaxed">{{ n.message }}</p>
+                              <p class="text-[8px] text-zinc-600 mt-2 font-mono">{{ n.timestamp | date:'shortTime' }}</p>
+                            </div>
+                          </div>
+                        </div>
+                      }
+                      @if (dataService.notifications().length === 0) {
+                        <div class="p-8 text-center text-[10px] text-zinc-600 uppercase font-black tracking-widest italic">Nenhum alerta agora.</div>
+                      }
+                    </div>
+                 </div>
+               </div>
+
                <span class="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono">
                  <span class="relative flex h-2 w-2">
                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>

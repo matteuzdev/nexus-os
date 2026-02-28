@@ -33,8 +33,19 @@ export interface AppSettings {
     resendApiKey?: string;
     whatsappApiToken?: string;
     githubToken?: string;
-    mcpServers?: string[]; // URLs de servidores MCP para os agentes
+    mcpServers?: string[];
+    telegramBotToken?: string;
+    telegramChatId?: string;
   };
+}
+
+export interface NexusNotification {
+  id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  timestamp: Date;
+  read: boolean;
 }
 
 export interface AutomationNode {
@@ -171,6 +182,9 @@ export class DataService {
   currentUser = signal<User | null>(null);
   userRole = signal<'admin' | 'client' | null>(null);
   
+  notifications = signal<NexusNotification[]>([]);
+  unreadNotificationsCount = computed(() => this.notifications().filter(n => !n.read).length);
+
   products = signal<Product[]>([]);
   tasks = signal<Task[]>([]);
   tickets = signal<Ticket[]>([]);
@@ -215,7 +229,6 @@ export class DataService {
   updateSettings(newSettings: AppSettings) {
     this.settings.set(newSettings);
     localStorage.setItem('nexus_settings', JSON.stringify(newSettings));
-    // Aplica o tema imediatamente
     document.body.className = `bg-zinc-950 text-zinc-100 h-screen overflow-hidden ${newSettings.theme}`;
   }
 
@@ -257,9 +270,9 @@ export class DataService {
     await this.supabase.auth.signOut();
   }
 
-  async updateProfile(name: string, phone?: string) {
+  async updateProfile(name: string, phone?: string, avatarUrl?: string) {
     const { data, error } = await this.supabase.auth.updateUser({
-      data: { full_name: name, phone }
+      data: { full_name: name, phone, avatar_url: avatarUrl }
     });
     if (error) throw error;
     return data;
@@ -271,13 +284,8 @@ export class DataService {
     return data;
   }
 
-  // Admin function to invite/create a user (Simulation for now without Service Role)
-  // In production, this calls a Supabase Edge Function to create user securely.
   async inviteUser(email: string, role: 'admin' | 'client', companyName?: string) {
-    // For MVP, we simulate invitation logic or use magic links.
-    // Standard signUp logs out the current user, so we just log the intent.
     console.log(`[Automação] Convite enviado para ${email} (Role: ${role}). Empresa: ${companyName}`);
-    // Ideally: await this.supabase.auth.signInWithOtp({ email, options: { data: { role, company: companyName } } });
     return true;
   }
 
@@ -400,7 +408,8 @@ export class DataService {
     if (data) this.personalTasks.set(data.map(pt => ({ 
       ...pt, 
       createdAt: new Date(pt.created_at),
-      isCompleted: pt.is_completed
+      isCompleted: pt.is_completed,
+      status: pt.status || (pt.is_completed ? 'Concluído' : 'A Fazer')
     })));
   }
 
@@ -656,7 +665,6 @@ export class DataService {
     if (newStatus === 'Fechado') {
       const lead = this.leads().find(l => l.id === leadId);
       if (lead) {
-        // Find or create client first
         let client = this.clients().find(c => c.company === lead.company);
         let clientId = client?.id;
 
@@ -667,8 +675,6 @@ export class DataService {
             company: lead.company,
             status: 'Onboarding'
           });
-          // To get the ID immediately, we would ideally return it from addClient, but for MVP:
-          // Wait a tick for realtime sync or fetch again. Let's assume we can proceed for tasks.
         }
 
         const newProjectId = await this.addProject({
@@ -716,16 +722,26 @@ export class DataService {
     }]);
   }
 
-  /**
-   * Envia notificações importantes (leads, convites, alertas) diretamente para o GitHub
-   * via GitHub Issues/Events (simulando disparo de e-mail para o time)
-   */
   async notifyTeam(title: string, body: string) {
     console.log(`[GitHub Notification] ${title}: ${body}`);
-    // No futuro, aqui chamamos a API do GitHub para criar uma Issue automática
-    // fetch('https://api.github.com/repos/matteuzdev/nexus-os/issues', { ... })
-    await this.sendMessage(`[NOTIFICAÇÃO SISTEMA] ${title}. Ver detalhes no repositório.`, 'Nexus System', true);
+    this.addNotification(title, body, 'info');
     return true;
+  }
+
+  addNotification(title: string, message: string, type: 'info' | 'success' | 'warning' | 'error' = 'info') {
+    const newNotif: NexusNotification = {
+      id: 'n' + Date.now(),
+      title,
+      message,
+      type,
+      timestamp: new Date(),
+      read: false
+    };
+    this.notifications.set([newNotif, ...this.notifications()]);
+  }
+
+  markAllAsRead() {
+    this.notifications.set(this.notifications().map(n => ({ ...n, read: true })));
   }
 
   async addXP(memberId: string, amount: number) {
@@ -771,7 +787,6 @@ export class DataService {
     await this.supabase.from('clients').delete().eq('id', id);
   }
 
-  // Sobrescrita do addTicket para incluir auto-criação de cliente
   async addTicketAndCheckClient(ticket: Omit<Ticket, 'id' | 'createdAt' | 'status'>) {
     const existingClient = this.clients().find(c => c.company.toLowerCase() === ticket.client.toLowerCase());
     if (!existingClient) {
@@ -785,11 +800,11 @@ export class DataService {
     await this.addTicket(ticket);
   }
 
-  // --- REGRAS & NOTIFICAÇÕES ---
-  hasIntegration(type: 'email' | 'whatsapp'): boolean {
+  hasIntegration(type: 'email' | 'whatsapp' | 'telegram'): boolean {
     const s = this.settings();
     if (type === 'email') return !!s.integrations.resendApiKey;
     if (type === 'whatsapp') return !!s.integrations.whatsappApiToken;
+    if (type === 'telegram') return !!s.integrations.telegramBotToken;
     return false;
   }
 }
