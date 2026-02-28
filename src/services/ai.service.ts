@@ -63,7 +63,7 @@ export class AiService {
       const prompt = `Contexto atual da Agência:\n${context}${blueprintContext}\n\nMensagem recebida:\n"${message}"\n\nResponda agora incorporando a sua persona:`;
 
       const response = await this.ai.models.generateContent({
-        model: 'gemini-2.0-flash',
+        model: 'gemini-1.5-flash',
         contents: prompt,
         config: {
           systemInstruction: systemInstruction,
@@ -83,7 +83,7 @@ export class AiService {
     try {
       const prompt = `Como QA Sênior (Carla), traduza o relato: "${clientDescription}" em Markdown técnico.`;
       const response = await this.ai.models.generateContent({
-        model: 'gemini-2.0-flash',
+        model: 'gemini-1.5-flash',
         contents: prompt,
         config: { systemInstruction: AGENT_PERSONAS.carla }
       });
@@ -97,7 +97,7 @@ export class AiService {
     if (!this.ai) return { priority: 'Média', summary: 'IA Offline.' };
     try {
       const prompt = `Analise o ticket e retorne JSON {"priority": "Baixa"|"Média"|"Alta"|"Crítica", "summary": "15 palavras"}.\n\nTicket:\n"${description}"`;
-      const response = await this.ai.models.generateContent({ model: 'gemini-2.0-flash', contents: prompt });
+      const response = await this.ai.models.generateContent({ model: 'gemini-1.5-flash', contents: prompt });
       const text = response.text || '{}';
       return JSON.parse(text.replace(/```json/g, '').replace(/```/g, '').trim());
     } catch (err) {

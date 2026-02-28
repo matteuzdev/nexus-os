@@ -163,6 +163,7 @@ export class SettingsViewComponent {
 
   currentTheme = this.dataService.settings().theme;
   resendKey = this.dataService.settings().integrations.resendApiKey || '';
+  waKey = this.dataService.settings().integrations.whatsappApiToken || '';
   tgToken = this.dataService.settings().integrations.telegramBotToken || '';
   tgChatId = this.dataService.settings().integrations.telegramChatId || '';
   mcpServers = (this.dataService.settings().integrations.mcpServers || []).join(', ');
