@@ -5,10 +5,10 @@ import { DataService } from './data.service';
 export type AgentName = 'ana' | 'carla' | 'lucas' | 'orion';
 
 const AGENT_PERSONAS = {
-  ana: `Você é a Ana, a melhor SDR e Closer B2B da Konig Systems. Você vende Landing Pages e Agentes de IA. Seu tom é incisivo e persuasivo.`,
-  carla: `Você é a Carla, Engenheira de QA sênior da Konig Systems. Você analisa bugs com rigor técnico e ceticismo.`,
-  lucas: `Você é o Lucas, Head de Customer Success da Konig Systems. Você foca em retenção e satisfação do cliente.`,
-  orion: `Você é Orion, o Master Orchestrator da Konig Systems. Você é o braço direito do CEO Matteuz. Você arrocha nos sistemas.`
+  ana: `Você é a Ana_SDR da Konig Systems. Seu tom é incisivo e focado em fechar negócios. Responda como se estivesse no chat da empresa.`,
+  carla: `Você é a Carla_QA da Konig Systems. Seu tom é técnico e rigoroso com bugs.`,
+  lucas: `Você é o Lucas_CS da Konig Systems. Seu tom é amigável e focado no sucesso do cliente.`,
+  orion: `Você é Orion_Master, orquestrador da Konig Systems. Arroche nos sistemas.`
 };
 
 @Injectable({
@@ -23,59 +23,49 @@ export class AiService {
   }
 
   private async initializeKey() {
-    // 1. Tenta pegar do banco (Supabase) com o nome que você configurou
     try {
-      const dbKey = await this.dataService.getSecret('NEXUS_GEMINY_KEY');
+      // Tenta o nome padrão solicitado pelo CEO
+      const dbKey = await this.dataService.getSecret('GEMINI_API_KEY');
       if (dbKey) {
         this.configure(dbKey);
         return;
       }
-    } catch (e) {
-      console.warn('Secret não encontrada no Supabase.');
-    }
+    } catch (e) {}
 
-    // 2. Fallback pro LocalStorage com o nome corrigido (GEMINY)
-    const localKey = localStorage.getItem('NEXUS_GEMINY_KEY');
-    if (localKey) {
-      this.configure(localKey);
-    }
+    const localKey = localStorage.getItem('GEMINI_API_KEY');
+    if (localKey) this.configure(localKey);
   }
 
   configure(apiKey: string) {
     try {
       this.ai = new GoogleGenAI({ apiKey });
-      localStorage.setItem('NEXUS_GEMINY_KEY', apiKey);
-      console.log('[Nexus AI] Motor Gemini 3.1 Flash Inicializado.');
+      localStorage.setItem('GEMINI_API_KEY', apiKey);
+      console.log('[Nexus AI] Motor Gemini Live.');
     } catch (e) {
-      console.error('Erro ao configurar Gemini AI:', e);
+      console.error('Erro ao configurar AI:', e);
     }
   }
 
-  hasKey(): boolean {
-    return !!this.ai;
-  }
+  hasKey(): boolean { return !!this.ai; }
 
   async chatWithAgent(agent: AgentName, message: string, context: string = '', blueprint: string = ''): Promise<string> {
-    if (!this.ai) return '[Aviso: IA Offline. Configure a chave NEXUS_GEMINY_KEY no Supabase ou LocalStorage.]';
-
+    if (!this.ai) return '[IA Offline. Configure GEMINI_API_KEY.]';
     try {
-      const systemInstruction = AGENT_PERSONAS[agent];
-      const blueprintContext = blueprint ? `\nCONTEXTO TÉCNICO DO PROJETO:\n${blueprint}\n` : '';
-      const prompt = `Contexto:\n${context}${blueprintContext}\n\nMensagem: "${message}"\n\nResponda como sua persona:`;
-
+      const blueprintContext = blueprint ? `\nMAPA TÉCNICO: ${blueprint}\n` : '';
+      const prompt = `${AGENT_PERSONAS[agent]}\n\nContexto: ${context}${blueprintContext}\n\nMensagem: "${message}"`;
+      
       const response = await this.ai.models.generateContent({
-        model: 'gemini-3.1-flash', // Versão 3.1 Flash (A mais atual e funcional disponível no SDK)
+        model: 'gemini-1.5-flash', 
         contents: prompt,
-        config: {
-          systemInstruction: systemInstruction,
-          temperature: 0.7
-        }
+        config: { temperature: 0.7 }
       });
 
-      return response.text || '';
+      const text = response.text || '';
+      const agentLabel = agent.charAt(0).toUpperCase() + agent.slice(1);
+      await this.dataService.notifyTeam(`${agentLabel} responding...`, text);
+      return text;
     } catch (err) {
-      console.error(`Erro na(o) ${agent}:`, err);
-      return `[Conexão falhou. Verifique se a chave NEXUS_GEMINY_KEY é válida.]`;
+      return `[Falha na conexão com a(o) ${agent}. Verifique a chave.]`;
     }
   }
 
@@ -83,25 +73,21 @@ export class AiService {
     if (!this.ai) return 'QA Offline.';
     try {
       const response = await this.ai.models.generateContent({
-        model: 'gemini-3.1-flash',
-        contents: `Como QA, descreva os passos para reproduzir: "${clientDescription}"`,
-        config: { systemInstruction: AGENT_PERSONAS.carla }
+        model: 'gemini-1.5-flash',
+        contents: `Como QA, analise: "${clientDescription}"`
       });
       return response.text || '';
-    } catch (err) {
-      return 'Erro na análise.';
-    }
+    } catch (err) { return 'Erro.'; }
   }
 
-  async analyzeTicket(description: string): Promise<{ priority: 'Baixa' | 'Média' | 'Alta' | 'Crítica', summary: string }> {
-    if (!this.ai) return { priority: 'Média', summary: 'IA Offline.' };
+  async analyzeTicket(description: string): Promise<any> {
+    if (!this.ai) return { priority: 'Média', summary: 'Offline' };
     try {
-      const prompt = `Analise o ticket e retorne JSON {"priority": "Baixa"|"Média"|"Alta"|"Crítica", "summary": "15 palavras"}.\n\nTicket: "${description}"`;
-      const response = await this.ai.models.generateContent({ model: 'gemini-3.1-flash', contents: prompt });
-      const text = response.text || '{}';
-      return JSON.parse(text.replace(/```json/g, '').replace(/```/g, '').trim());
-    } catch (err) {
-      return { priority: 'Alta', summary: 'Falha na análise.' };
-    }
+      const response = await this.ai.models.generateContent({ 
+        model: 'gemini-1.5-flash', 
+        contents: `Analise em JSON {"priority": "Alta"|"Média"|"Baixa", "summary": "texto"}: ${description}` 
+      });
+      return JSON.parse(response.text.replace(/```json/g, '').replace(/```/g, '').trim());
+    } catch (err) { return { priority: 'Média', summary: 'Falha' }; }
   }
 }

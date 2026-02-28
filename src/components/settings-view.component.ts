@@ -28,27 +28,26 @@ import { DataService } from '../services/data.service';
           <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 shadow-xl">
             <h4 class="text-sm font-black text-white uppercase tracking-widest mb-6 border-b border-zinc-800 pb-4">Identidade CEO</h4>
             <form (submit)="updateProfile($event)" class="space-y-6">
-              <div class="flex justify-center mb-6">
-                 <div class="w-24 h-24 rounded-full bg-zinc-800 border-2 border-zinc-700 overflow-hidden flex items-center justify-center relative group">
+              <div class="flex flex-col items-center mb-6">
+                 <div class="w-32 h-32 rounded-full bg-zinc-800 border-4 border-zinc-700 overflow-hidden flex items-center justify-center relative group shadow-2xl">
                    @if (avatarUrl) {
                      <img [src]="avatarUrl" class="w-full h-full object-cover">
                    } @else {
-                     <span class="text-2xl font-black text-zinc-600">{{ fullName.substring(0,1) }}</span>
+                     <span class="text-4xl font-black text-zinc-600">{{ fullName.substring(0,1) }}</span>
                    }
-                   <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-[8px] font-black text-white uppercase text-center p-2">Alterar URL abaixo</div>
+                   <label class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-[8px] font-black text-white uppercase text-center p-2 cursor-pointer">
+                     <svg class="w-6 h-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                     Upload Foto
+                     <input type="file" class="hidden" (change)="onFileSelected($event)" accept="image/*">
+                   </label>
                  </div>
+                 <p class="text-[9px] text-zinc-600 mt-2 uppercase font-black tracking-tighter">Clique na imagem para alterar</p>
               </div>
 
               <div>
                 <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">Nome Completo</label>
                 <input type="text" [(ngModel)]="fullName" name="fullName" required
                   class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-white focus:border-indigo-500 outline-none transition-colors">
-              </div>
-
-              <div>
-                <label class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2 text-indigo-400">URL da Foto (Avatar)</label>
-                <input type="text" [(ngModel)]="avatarUrl" name="avatarUrl" placeholder="https://imgur.com/..."
-                  class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-white focus:border-indigo-500 outline-none transition-colors text-xs font-mono">
               </div>
 
               <button type="submit" [disabled]="loading()"
@@ -78,19 +77,19 @@ import { DataService } from '../services/data.service';
             <h4 class="text-sm font-black text-white uppercase tracking-widest mb-6 border-b border-zinc-800 pb-4">Personalização Visual</h4>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
               <button (click)="changeTheme('nexus-dark')" [class.ring-2.ring-indigo-500]="currentTheme === 'nexus-dark'" class="p-4 bg-zinc-950 border border-zinc-800 rounded-2xl hover:bg-zinc-900 transition-all flex flex-col items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-zinc-900 border-4 border-zinc-800"></div>
+                <div class="w-8 h-8 rounded-full bg-[#09090b] border-2 border-indigo-500"></div>
                 <span class="text-[10px] font-black text-white uppercase tracking-tighter">Nexus Dark</span>
               </button>
               <button (click)="changeTheme('neon-cyber')" [class.ring-2.ring-cyan-500]="currentTheme === 'neon-cyber'" class="p-4 bg-zinc-950 border border-zinc-800 rounded-2xl hover:bg-zinc-900 transition-all flex flex-col items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-zinc-900 border-4 border-cyan-500"></div>
+                <div class="w-8 h-8 rounded-full bg-[#000814] border-2 border-cyan-500"></div>
                 <span class="text-[10px] font-black text-white uppercase tracking-tighter">Cyberpunk</span>
               </button>
               <button (click)="changeTheme('ruby-red')" [class.ring-2.ring-rose-500]="currentTheme === 'ruby-red'" class="p-4 bg-zinc-950 border border-zinc-800 rounded-2xl hover:bg-zinc-900 transition-all flex flex-col items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-zinc-900 border-4 border-rose-500"></div>
+                <div class="w-8 h-8 rounded-full bg-[#0a0000] border-2 border-rose-500"></div>
                 <span class="text-[10px] font-black text-white uppercase tracking-tighter">Ruby Red</span>
               </button>
               <button (click)="changeTheme('emerald-city')" [class.ring-2.ring-emerald-500]="currentTheme === 'emerald-city'" class="p-4 bg-zinc-950 border border-zinc-800 rounded-2xl hover:bg-zinc-900 transition-all flex flex-col items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-zinc-900 border-4 border-emerald-500"></div>
+                <div class="w-8 h-8 rounded-full bg-[#000a00] border-2 border-emerald-500"></div>
                 <span class="text-[10px] font-black text-white uppercase tracking-tighter">Emerald</span>
               </button>
             </div>
@@ -135,9 +134,18 @@ import { DataService } from '../services/data.service';
               <div>
                 <label class="block text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-2 flex items-center gap-2">
                   <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                  Servidores MCP (URLs de Contexto)
+                  Conectores MCP (Model Context Protocol)
                 </label>
-                <textarea [(ngModel)]="mcpServers" name="mcpServers" rows="2" placeholder="http://localhost:3000/mcp, https://github-mcp.vercel.app" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-xs text-zinc-300 focus:border-emerald-500 outline-none transition-colors resize-none font-mono"></textarea>
+                <div class="space-y-4">
+                   <div class="flex gap-4 items-center bg-zinc-950 border border-zinc-800 p-4 rounded-xl">
+                      <div class="w-10 h-10 rounded bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-500 font-mono text-[10px]">WEB</div>
+                      <div class="flex-1">
+                        <p class="text-[10px] font-black text-white uppercase tracking-widest">Web Browser Connector</p>
+                        <input [(ngModel)]="mcpServers" name="mcpServers" placeholder="URL do Servidor MCP" class="w-full bg-transparent border-none p-0 text-xs text-indigo-400 focus:ring-0">
+                      </div>
+                      <div class="w-2 h-2 rounded-full bg-zinc-700"></div>
+                   </div>
+                </div>
               </div>
 
               <button type="submit" [disabled]="loading()"
@@ -186,6 +194,17 @@ export class SettingsViewComponent {
     }
   }
 
+  onFileSelected(event: any) {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        this.avatarUrl = e.target.result; // Base64
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
   async updatePassword(e: Event) {
     e.preventDefault();
     if (this.newPassword.length < 6) return;
@@ -206,6 +225,19 @@ export class SettingsViewComponent {
     this.currentTheme = theme;
     const settings = this.dataService.settings();
     this.dataService.updateSettings({ ...settings, theme });
+    
+    // Injeta classes de cores baseadas no tema
+    const themes: any = {
+      'nexus-dark': { bg: '#09090b', accent: '#6366f1' },
+      'neon-cyber': { bg: '#000814', accent: '#06b6d4' },
+      'ruby-red': { bg: '#0a0000', accent: '#e11d48' },
+      'emerald-city': { bg: '#000a00', accent: '#10b981' }
+    };
+    
+    const config = themes[theme];
+    document.documentElement.style.setProperty('--nexus-bg', config.bg);
+    document.documentElement.style.setProperty('--nexus-accent', config.accent);
+    
     this.successMessage.set('Tema visual orquestrado!');
     setTimeout(() => this.successMessage.set(''), 3000);
   }
