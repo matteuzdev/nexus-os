@@ -19,6 +19,10 @@ import { NexusModalComponent } from './nexus-modal.component';
           <p class="text-xs font-mono text-zinc-500 mt-1">Orquestração visual de regras e Agentes (Nexus Builder).</p>
         </div>
         <div class="flex items-center gap-4">
+          <button class="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-white font-bold rounded-xl border border-zinc-800 transition-all flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+            Meus Fluxos
+          </button>
           <button class="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/20 transition-all flex items-center gap-2" (click)="isModalOpen.set(true)">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
             Novo Fluxo
@@ -26,7 +30,7 @@ import { NexusModalComponent } from './nexus-modal.component';
         </div>
       </header>
 
-      <!-- Builder Area (Visual Representation) -->
+      <!-- Builder Area -->
       <div class="flex-1 bg-zinc-900/30 border border-zinc-800 rounded-3xl overflow-hidden flex relative shadow-2xl">
         <div class="w-64 border-r border-zinc-800 bg-zinc-950/80 backdrop-blur-md p-6 flex flex-col gap-6 overflow-y-auto custom-scrollbar z-10">
           <h4 class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Gatilhos</h4>

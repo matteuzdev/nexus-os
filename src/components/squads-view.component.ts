@@ -100,12 +100,10 @@ import { AiService } from '../services/ai.service';
             <div class="flex gap-4 group" [class.flex-row-reverse]="msg.senderId === 'ceo'">
               <!-- Avatar -->
               <div class="w-10 h-10 shrink-0 rounded-2xl bg-zinc-800 border border-zinc-700 flex items-center justify-center text-[10px] font-black text-indigo-400 group-hover:border-indigo-500 transition-all overflow-hidden shadow-lg">
-                @if (msg.senderId === 'ceo' && dataService.currentUser()?.user_metadata?.['avatar_url']) {
+                @if (msg.senderId === 'ceo' && dataService.currentUser()?.user_metadata?.['avatar_url'] && !avatarError) {
                   <img [src]="dataService.currentUser()?.user_metadata?.['avatar_url']" 
                     (error)="avatarError = true" 
-                    *ngIf="!avatarError"
                     class="w-full h-full object-cover">
-                  <span *ngIf="avatarError">{{ msg.senderName.substring(0,2).toUpperCase() }}</span>
                 } @else {
                   {{ msg.senderName.substring(0,2).toUpperCase() }}
                 }

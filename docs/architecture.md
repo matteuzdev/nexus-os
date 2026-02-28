@@ -1,18 +1,27 @@
-# Nexus OS - System Architecture
+# Nexus OS - Architecture Specification
 
-## Design Philosophy
-- **Anti-ADHD UI**: Interfaces focadas, de alta densidade mas sem distrações visuais desnecessárias.
-- **AI-Native Integration**: IA não é opcional, é o motor de triagem e execução.
-- **Realtime Sync**: Todo o estado é espelhado via Supabase Realtime.
+## 1. Tech Stack
+- **Frontend Framework:** Angular 21 (Standalone Components, Signals)
+- **Styling:** Tailwind CSS
+- **Backend/Database:** Supabase (PostgreSQL, Realtime Subscriptions, Auth)
+- **AI Engine:** Google Gemini SDK (`@google/genai`) using `gemini-3.1-flash`
+- **Orchestration:** Synkra AIOS Method (Internal Agent Workflows)
 
-## Data Flow
-- **State Management**: Angular Signals como fonte da verdade local no frontend.
-- **Persistence**: Supabase Postgres para persistência duradoura.
-- **Intelligence**: AI Service como orquestrador de mentes (Ana, Carla, Lucas, Orion).
+## 2. Core Modules
+1. `AppComponent`: The master router and layout orchestrator. Manages authentication state and view switching.
+2. `DataService`: The single source of truth. Handles all Supabase interactions, Realtime listeners, and local State (Signals).
+3. `AiService`: The neural bridge. Connects to Google Gemini, injecting Context and Agent Personas (Ana, Carla, Lucas, Orion).
+4. `NexusModalComponent`: The standardized UI wrapper for all data-entry forms.
+5. `NexusDrawerComponent`: The standardized UI wrapper for all detail-view panels.
 
-## Database Schema (Snake_case Standard)
-- `products`: id, name, stage, version, revenue, next_action.
-- `tasks`: id, title, description, status, tag, linked_product_id, origin_ticket_id.
-- `tickets`: id, client, title, description, status, linked_product_id, reproduction_steps, sla_hours.
-- `messages`: id, sender_id, sender_name, content, is_private, timestamp.
-- `personal_tasks`: id, title, status, is_completed, type, created_at.
+## 3. Data Flow
+1. User interacts with a View (e.g., `KanbanView`).
+2. View calls a method on `DataService` (e.g., `addTask`).
+3. `DataService` executes async Supabase RPC/Insert.
+4. Supabase Realtime channel triggers `initializeData()` which updates the Signals.
+5. Angular Reactivity updates the View automatically.
+
+## 4. Known Technical Debt & Risks
+- **Risk:** Type mismatches between TypeScript interfaces and Supabase schema (e.g., camelCase vs snake_case).
+- **Risk:** Unhandled promise rejections in API calls (Telegram, Resend, Gemini) leading to silent UI failures.
+- **Mitigation:** Strict typing in `DataService` and global error handling wrappers.
