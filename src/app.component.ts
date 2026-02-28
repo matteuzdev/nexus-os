@@ -80,7 +80,7 @@ type View = 'public' | 'public-support' | 'auth' | 'dashboard' | 'portfolio' | '
             <button (click)="currentView.set('dashboard')" 
               class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all"
               [class]="currentView() === 'dashboard' ? 'bg-zinc-800 text-white shadow-inner' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'">
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6z" /></svg>
               Visão Geral
             </button>
 
@@ -98,32 +98,39 @@ type View = 'public' | 'public-support' | 'auth' | 'dashboard' | 'portfolio' | '
               Vendas / CRM
             </button>
 
+            <button (click)="currentView.set('automations')" 
+              class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all"
+              [class]="currentView() === 'automations' ? 'bg-indigo-600/10 text-indigo-400 border border-indigo-500/20' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+              Automações (Builder)
+            </button>
+
             <button (click)="currentView.set('squads')" 
               class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all"
               [class]="currentView() === 'squads' ? 'bg-zinc-800 text-white shadow-inner' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-              Squads & Gestão
+              Squads & Equipe
             </button>
 
             <button (click)="currentView.set('kanban')" 
               class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all"
               [class]="currentView() === 'kanban' ? 'bg-zinc-800 text-white shadow-inner' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" /></svg>
-              Desenvolvimento
+              Engenharia
             </button>
 
             <button (click)="currentView.set('support')" 
               class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all"
               [class]="currentView() === 'support' ? 'bg-zinc-800 text-white shadow-inner' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-              Suporte & Chamados
+              Suporte (QA)
             </button>
 
             <button (click)="currentView.set('portfolio')" 
               class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all"
               [class]="currentView() === 'portfolio' ? 'bg-zinc-800 text-white shadow-inner' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
-              Portfólio
+              Portfólio Serviços
             </button>
 
             @if (dataService.userRole() === 'admin') {
@@ -170,12 +177,12 @@ type View = 'public' | 'public-support' | 'auth' | 'dashboard' | 'portfolio' | '
                 @case ('personal') { <span class="text-emerald-400">My Focus Space</span> }
                 @case ('dashboard') { Visão Geral }
                 @case ('clients') { Gestão de Clientes }
-                @case ('sales') { Funil de Vendas & CRM }
-                @case ('squads') { Squads & Gestão de Equipe }
-                @case ('portfolio') { Portfólio de Serviços }
-                @case ('automations') { Automações & Regras de IA }
+                @case ('sales') { CRM }
+                @case ('squads') { Squads Hub }
+                @case ('portfolio') { Portfólio }
+                @case ('automations') { Automações (Flows) }
                 @case ('kanban') { Board de Engenharia }
-                @case ('support') { Central de Suporte (QA) }
+                @case ('support') { Central de Suporte }
                 @case ('settings') { Minha Conta }
                 @case ('users') { Colaboradores }
               }
@@ -192,7 +199,7 @@ type View = 'public' | 'public-support' | 'auth' | 'dashboard' | 'portfolio' | '
                    }
                  </button>
                  
-                 <!-- Notifications Panel (Hover) -->
+                 <!-- Notifications Panel -->
                  <div class="absolute right-0 top-full mt-2 w-80 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl opacity-0 translate-y-4 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all z-50 overflow-hidden">
                     <div class="p-4 border-b border-zinc-800 bg-zinc-950/50 flex justify-between items-center">
                       <span class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Notificações</span>
@@ -244,6 +251,7 @@ type View = 'public' | 'public-support' | 'auth' | 'dashboard' | 'portfolio' | '
               @case ('support') { <app-support-view class="animate-in fade-in slide-in-from-bottom-2 duration-500 h-full block"/> }
               @case ('settings') { <app-settings-view class="animate-in fade-in slide-in-from-bottom-2 duration-500 h-full block"/> }
               @case ('users') { <app-users-view class="animate-in fade-in slide-in-from-bottom-2 duration-500 h-full block"/> }
+              @case ('automations') { <app-automations-view class="animate-in fade-in slide-in-from-bottom-2 duration-500 h-full block"/> }
             }
           </div>
         </main>
