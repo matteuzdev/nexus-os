@@ -10,10 +10,17 @@ import { NexusDrawerComponent } from './nexus-drawer.component';
   imports: [CommonModule, FormsModule, NexusDrawerComponent],
   template: `
     <div class="flex flex-col h-full overflow-hidden">
-      <header class="flex items-center justify-between mb-8 shrink-0">
-        <div>
-          <h3 class="text-3xl font-black text-white uppercase tracking-tighter">Gestão de Clientes</h3>
-          <p class="text-xs font-mono text-zinc-500 mt-1">Base de empresas parceiras e saúde do relacionamento.</p>
+      <header class="flex items-center justify-between mb-8 shrink-0 px-2 flex-wrap gap-6">
+        <div class="flex flex-col gap-4 md:flex-row md:items-end md:gap-8 flex-1">
+          <div>
+            <h3 class="text-3xl font-black text-white uppercase tracking-tighter">Gestão de Clientes</h3>
+            <p class="text-xs font-mono text-zinc-500 mt-1">Base de empresas parceiras e saúde do relacionamento.</p>
+          </div>
+          
+          <div class="relative">
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            <input [(ngModel)]="searchTerm" placeholder="Buscar empresa..." class="bg-zinc-900 border border-zinc-800 rounded-xl py-2.5 pl-9 pr-4 text-xs text-white focus:border-indigo-500 outline-none w-64 transition-all">
+          </div>
         </div>
         <button (click)="createNewClient()" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/20 transition-all flex items-center gap-2">
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
@@ -35,7 +42,7 @@ import { NexusDrawerComponent } from './nexus-drawer.component';
               </tr>
             </thead>
             <tbody class="divide-y divide-zinc-800/50">
-              @for (client of dataService.clients(); track client.id) {
+              @for (client of filteredClients(); track client.id) {
                 <tr class="hover:bg-indigo-600/5 transition-colors group">
                   <td class="px-8 py-6">
                     <div class="flex items-center gap-4">
@@ -57,12 +64,11 @@ import { NexusDrawerComponent } from './nexus-drawer.component';
                     </span>
                   </td>
                   <td class="px-8 py-6 text-center">
-                    <span class="bg-zinc-800 text-zinc-300 px-2 py-0.5 rounded font-mono font-bold text-xs">{{ client.totalProjects }}</span>
+                    <span class="bg-zinc-800 text-zinc-300 px-2 py-0.5 rounded font-mono font-bold text-xs">{{ getClientProjects(client.id).length }}</span>
                   </td>
                   <td class="px-8 py-6 text-center">
-                    <span [class]="client.openTickets > 0 ? 'bg-rose-500/20 text-rose-400 border border-rose-500/20' : 'bg-zinc-800 text-zinc-500'" 
-                      class="px-2 py-0.5 rounded font-mono font-bold text-xs">
-                      {{ client.openTickets }}
+                    <span class="px-2 py-0.5 rounded font-mono font-bold text-xs bg-zinc-800 text-zinc-500">
+                      {{ client.openTickets || 0 }}
                     </span>
                   </td>
                   <td class="px-8 py-6 text-xs text-zinc-400 font-mono">
@@ -120,6 +126,15 @@ export class ClientsViewComponent {
   isDrawerOpen = signal(false);
   drawerType = signal<'client' | 'project'>('client');
   selectedData = signal<any>(null);
+  
+  searchTerm = '';
+
+  filteredClients = computed(() => {
+    return this.dataService.clients().filter(c => 
+      c.company.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+      c.name.toLowerCase().includes(this.searchTerm.toLowerCase())
+    );
+  });
 
   getClientProjects(clientId: string) {
     return this.dataService.projects().filter(p => p.clientId === clientId);
@@ -153,17 +168,12 @@ export class ClientsViewComponent {
   createNewClient() {
     const company = prompt('Nome da empresa:');
     if (!company) return;
-    const name = prompt('Nome do contato principal:');
-    const email = prompt('E-mail do cliente:');
-
-    if (company && name && email) {
-      this.dataService.addClient({
-        company,
-        name,
-        email,
-        status: 'Onboarding'
-      });
-    }
+    this.dataService.addClient({
+      company,
+      name: 'Contato Principal',
+      email: '',
+      status: 'Onboarding'
+    });
   }
 
   deleteClient(id: string) {

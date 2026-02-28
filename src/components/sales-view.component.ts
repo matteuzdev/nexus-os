@@ -13,9 +13,26 @@ import { NexusModalComponent } from './nexus-modal.component';
     <div class="flex flex-col h-full overflow-hidden">
       <!-- CRM Header -->
       <div class="flex items-center justify-between mb-8 shrink-0 px-2">
-        <div>
-          <h3 class="text-3xl font-black text-white uppercase tracking-tighter">CRM & Growth</h3>
-          <p class="text-xs font-mono text-zinc-500 mt-1">Pipeline total: <span class="text-emerald-400 font-bold">{{ dataService.pipelineValue() | currency:'BRL' }}</span></p>
+        <div class="flex flex-col gap-4 md:flex-row md:items-end md:gap-8">
+          <div>
+            <h3 class="text-3xl font-black text-white uppercase tracking-tighter">CRM & Growth</h3>
+            <p class="text-xs font-mono text-zinc-500 mt-1">Pipeline: <span class="text-emerald-400 font-bold">{{ dataService.pipelineValue() | currency:'BRL' }}</span></p>
+          </div>
+          
+          <!-- Advanced Filters -->
+          <div class="flex items-center gap-3">
+            <div class="relative">
+              <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+              <input [(ngModel)]="searchTerm" placeholder="Buscar empresa..." class="bg-zinc-900 border border-zinc-800 rounded-xl py-2.5 pl-9 pr-4 text-xs text-white focus:border-indigo-500 outline-none w-48 transition-all">
+            </div>
+            <select [(ngModel)]="sourceFilter" class="bg-zinc-900 border border-zinc-800 rounded-xl py-2.5 px-4 text-[10px] font-black uppercase text-zinc-400 outline-none focus:border-indigo-500 appearance-none cursor-pointer">
+              <option value="ALL">Todas Origens</option>
+              <option value="Ads">Ads</option>
+              <option value="LinkedIn">LinkedIn</option>
+              <option value="Manual">Manual</option>
+              <option value="Indicador">Indicação</option>
+            </select>
+          </div>
         </div>
         <button (click)="isModalOpen.set(true)" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/20 transition-all flex items-center gap-2">
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
@@ -42,9 +59,8 @@ import { NexusModalComponent } from './nexus-modal.component';
             <div class="flex-1 p-4 space-y-4 overflow-y-auto custom-scrollbar min-h-[150px]">
               @for (lead of getLeadsByStatus(col.status); track lead.id) {
                 <div (click)="openDetail(lead)" 
-                  class="bg-zinc-950 border border-zinc-800 rounded-2xl p-5 hover:border-indigo-500/50 hover:shadow-2xl hover:shadow-indigo-500/5 cursor-pointer transition-all group relative overflow-hidden">
+                  class="bg-zinc-950 border border-zinc-800 rounded-2xl p-5 hover:border-indigo-500/50 hover:shadow-2xl hover:shadow-indigo-500/5 cursor-pointer transition-all group relative overflow-hidden animate-in fade-in zoom-in-95">
                   
-                  <!-- Progress Bar -->
                   <div class="absolute bottom-0 left-0 h-1 bg-indigo-600/20 w-full">
                     <div class="h-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]" [style.width.%]="getLeadProgress(lead.status)"></div>
                   </div>
@@ -65,7 +81,7 @@ import { NexusModalComponent } from './nexus-modal.component';
                     </div>
                     <div class="flex gap-1.5">
                        <div class="w-1.5 h-1.5 rounded-full bg-zinc-700" [class.bg-emerald-500]="lead.source === 'Ads'"></div>
-                       <div class="w-1.5 h-1.5 rounded-full bg-zinc-700" [class.bg-indigo-500]="lead.source === 'Indicador'"></div>
+                       <div class="w-1.5 h-1.5 rounded-full bg-indigo-500" [class.bg-indigo-500]="lead.source === 'Indicador'"></div>
                     </div>
                   </div>
                 </div>
@@ -136,6 +152,9 @@ export class SalesViewComponent {
   isModalOpen = signal(false);
   selectedLead = signal<Lead | null>(null);
 
+  searchTerm = '';
+  sourceFilter = 'ALL';
+
   newLead = {
     company: '',
     contact: '',
@@ -153,7 +172,12 @@ export class SalesViewComponent {
   ];
 
   getLeadsByStatus(status: LeadStatus): Lead[] {
-    return this.dataService.leads().filter(l => l.status === status);
+    return this.dataService.leads().filter(l => {
+      const matchStatus = l.status === status;
+      const matchSearch = l.company.toLowerCase().includes(this.searchTerm.toLowerCase());
+      const matchSource = this.sourceFilter === 'ALL' || l.source === this.sourceFilter;
+      return matchStatus && matchSearch && matchSource;
+    });
   }
 
   getLeadProgress(status: LeadStatus): number {

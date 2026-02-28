@@ -1,7 +1,7 @@
-import { Component, inject, signal, effect } from '@angular/core';
+import { Component, inject, signal, effect, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { DataService, Ticket, TicketStatus } from '../services/data.service';
+import { DataService, Ticket, TicketStatus, TicketPriority } from '../services/data.service';
 import { AiService } from '../services/ai.service';
 import { NexusDrawerComponent } from './nexus-drawer.component';
 
@@ -12,15 +12,39 @@ import { NexusDrawerComponent } from './nexus-drawer.component';
   template: `
     <div class="grid grid-cols-1 xl:grid-cols-4 gap-8 h-full">
       <!-- Tickets Sidebar/List -->
-      <div class="xl:col-span-1 flex flex-col gap-4 overflow-y-auto custom-scrollbar pr-2">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-xl font-black text-white uppercase tracking-tighter">Inbox de Suporte</h3>
-          <span class="bg-indigo-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{{ dataService.openTickets() }}</span>
+      <div class="xl:col-span-1 flex flex-col gap-4 overflow-y-auto custom-scrollbar pr-2 pb-8">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-xl font-black text-white uppercase tracking-tighter">Inbox Suporte</h3>
+          <span class="bg-indigo-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{{ getFilteredTickets().length }}</span>
+        </div>
+
+        <!-- Support Filters -->
+        <div class="space-y-3 mb-4">
+          <div class="relative">
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            <input [(ngModel)]="searchTerm" placeholder="Buscar cliente..." class="w-full bg-zinc-900 border border-zinc-800 rounded-xl py-2 pl-8 pr-4 text-[10px] text-white focus:border-indigo-500 outline-none transition-all">
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <select [(ngModel)]="statusFilter" class="bg-zinc-900 border border-zinc-800 rounded-xl py-2 px-3 text-[9px] font-black uppercase text-zinc-500 outline-none focus:border-indigo-500 appearance-none cursor-pointer">
+              <option value="ALL">Todos Status</option>
+              <option value="Aberto">Aberto</option>
+              <option value="Em Análise">Em Análise</option>
+              <option value="Aguardando Dev">Aguardando Dev</option>
+              <option value="Resolvido">Resolvido</option>
+            </select>
+            <select [(ngModel)]="priorityFilter" class="bg-zinc-900 border border-zinc-800 rounded-xl py-2 px-3 text-[9px] font-black uppercase text-zinc-500 outline-none focus:border-indigo-500 appearance-none cursor-pointer">
+              <option value="ALL">Prioridades</option>
+              <option value="Crítica">Crítica</option>
+              <option value="Alta">Alta</option>
+              <option value="Média">Média</option>
+              <option value="Baixa">Baixa</option>
+            </select>
+          </div>
         </div>
         
-        @for (ticket of dataService.tickets(); track ticket.id) {
+        @for (ticket of getFilteredTickets(); track ticket.id) {
           <div (click)="selectedTicket.set(ticket)" 
-            class="p-4 rounded-2xl border transition-all cursor-pointer group"
+            class="p-4 rounded-2xl border transition-all cursor-pointer group animate-in fade-in"
             [class]="selectedTicket()?.id === ticket.id ? 'bg-indigo-600/10 border-indigo-500 shadow-lg shadow-indigo-500/10' : 'bg-zinc-900 border-zinc-800 hover:border-zinc-700'">
             <div class="flex justify-between items-start mb-2">
               <span class="text-[9px] font-black uppercase px-1.5 py-0.5 rounded"
@@ -31,12 +55,12 @@ import { NexusDrawerComponent } from './nexus-drawer.component';
               <span class="text-[8px] font-mono text-zinc-600">#{{ ticket.id.substring(2,6) }}</span>
             </div>
             <h4 class="text-sm font-bold text-white group-hover:text-indigo-400 transition-colors truncate">{{ ticket.title }}</h4>
-            <p class="text-[10px] text-zinc-500 mt-1 uppercase font-bold tracking-tighter">{{ ticket.client }}</p>
+            <p class="text-[10px] text-zinc-500 mt-1 uppercase font-black tracking-tighter">{{ ticket.client }}</p>
           </div>
         }
       </div>
 
-      <!-- Ticket Command Center (Integrated with QA & Dev) -->
+      <!-- Ticket Command Center -->
       <div class="xl:col-span-3 flex flex-col bg-zinc-900 border border-zinc-800 rounded-3xl overflow-hidden shadow-2xl">
         @if (selectedTicket()) {
           <div class="h-full flex flex-col">
@@ -69,7 +93,6 @@ import { NexusDrawerComponent } from './nexus-drawer.component';
 
             <!-- Main Panel -->
             <div class="flex-1 overflow-y-auto p-8 custom-scrollbar grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <!-- Content -->
               <div class="lg:col-span-2 space-y-8">
                 <div>
                   <h3 class="text-xs font-black text-zinc-500 uppercase tracking-widest mb-4 flex items-center gap-2">
@@ -93,73 +116,45 @@ import { NexusDrawerComponent } from './nexus-drawer.component';
                   </div>
                 }
 
-                <!-- QA Analysis Section -->
+                <!-- QA Analysis -->
                 <div class="p-6 bg-emerald-600/5 border border-emerald-500/20 rounded-3xl space-y-4">
                   <div class="flex justify-between items-center">
                     <h3 class="text-xs font-black text-emerald-400 uppercase tracking-widest flex items-center gap-2">
                       <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                      Análise de Qualidade (Carla QA)
+                      Análise Carla QA
                     </h3>
                     @if (isAnalyzing()) {
-                       <span class="text-[8px] bg-emerald-500 text-black px-2 py-0.5 rounded font-black animate-pulse uppercase flex items-center gap-1">
-                         <svg class="animate-spin h-2 w-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                         A Mente de Carla está Analisando...
-                       </span>
+                       <span class="text-[8px] bg-emerald-500 text-black px-2 py-0.5 rounded font-black animate-pulse uppercase flex items-center gap-1">A Mente de Carla está Analisando...</span>
                     } @else {
-                       <button (click)="generateQASteps()" [disabled]="!aiService.hasKey() || !!selectedTicket()!.reproductionSteps" 
-                          class="text-[8px] bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-400 border border-emerald-500/30 px-2 py-1 rounded font-black uppercase transition-colors disabled:opacity-50 flex items-center gap-1">
-                          <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                       <button (click)="generateQASteps()" [disabled]="!aiService.hasKey()" 
+                          class="text-[8px] bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-400 border border-emerald-500/30 px-2 py-1 rounded font-black uppercase transition-all flex items-center gap-1">
                           Auto-Analisar com IA
                        </button>
                     }
                   </div>
-                  
-                  <div>
-                    <label class="text-[10px] text-zinc-600 uppercase font-black block mb-2">Passos para Reproduzir / Notas Técnicas</label>
-                    <textarea [(ngModel)]="selectedTicket()!.reproductionSteps" 
-                      placeholder="Carla, descreva como reproduzir o erro antes de escalar..."
-                      class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-sm text-zinc-300 outline-none focus:border-emerald-500 resize-none font-mono min-h-[100px]"></textarea>
-                  </div>
+                  <textarea [(ngModel)]="selectedTicket()!.reproductionSteps" 
+                    placeholder="Notas técnicas geradas pela Carla..."
+                    class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-sm text-zinc-300 outline-none focus:border-emerald-500 resize-none font-mono min-h-[100px]"></textarea>
                 </div>
 
-                <!-- Dev Integration Section (Jira Style) -->
+                <!-- Orion Integration -->
                 <div class="p-6 bg-indigo-600/5 border border-indigo-500/20 rounded-3xl space-y-4">
-                  <h3 class="text-xs font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
-                    Conexão com Engenharia (Orion)
-                  </h3>
-                  
+                  <h3 class="text-xs font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2">Orion Dev Engine</h3>
                   @if (selectedTicket()!.linkedTaskId) {
-                    <div class="flex items-center justify-between p-4 bg-zinc-950 rounded-2xl border border-zinc-800 group hover:border-indigo-500/50 transition-all cursor-pointer">
-                      <div class="flex items-center gap-4">
-                        <div class="w-10 h-10 rounded-xl bg-indigo-600/20 flex items-center justify-center text-indigo-400 font-black text-xs">DEV</div>
-                        <div>
-                          <p class="text-xs text-zinc-500 font-bold uppercase tracking-tighter">Tarefa Vinculada no Kanban</p>
-                          <p class="text-sm font-bold text-white">#{{ selectedTicket()!.linkedTaskId.substring(1,6) }} - Em Execução</p>
-                        </div>
-                      </div>
-                      <div class="flex items-center gap-2 text-indigo-500 group-hover:translate-x-1 transition-transform">
-                        <span class="text-[10px] font-black uppercase">Ver no Board</span>
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-                      </div>
+                    <div class="p-4 bg-zinc-950 rounded-2xl border border-zinc-800 flex justify-between items-center">
+                       <span class="text-xs font-bold text-white">Tarefa #{{ selectedTicket()!.linkedTaskId }} em Sprint</span>
+                       <span class="text-[8px] font-black uppercase text-indigo-400">Ver Board</span>
                     </div>
                   } @else {
-                    <div class="text-center py-6">
-                      <p class="text-xs text-zinc-600 mb-4 font-bold italic">O ticket precisa ser validado pela QA antes da escalada técnica.</p>
-                      <button (click)="escalate()" 
-                        [disabled]="!selectedTicket()!.reproductionSteps"
-                        class="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-30 disabled:hover:bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-indigo-500/20 active:scale-95">
-                        Escalar para Engenharia
-                      </button>
-                    </div>
+                    <button (click)="escalate()" [disabled]="!selectedTicket()!.reproductionSteps" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-indigo-500/20">Escalar para Engenharia</button>
                   }
                 </div>
               </div>
 
-              <!-- Sidebar Details -->
+              <!-- Metadata Sidebar -->
               <div class="space-y-6">
                 <div class="p-6 bg-zinc-950 rounded-2xl border border-zinc-800 shadow-xl">
-                  <h4 class="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-6">Metadados de Entrega</h4>
+                  <h4 class="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-6">Metadados</h4>
                   <div class="space-y-6">
                     <div>
                       <p class="text-[8px] text-zinc-500 font-black uppercase mb-1">Projeto Afetado</p>
@@ -167,18 +162,7 @@ import { NexusDrawerComponent } from './nexus-drawer.component';
                     </div>
                     <div>
                       <p class="text-[8px] text-zinc-500 font-black uppercase mb-1">SLA de Resolução</p>
-                      <div class="flex items-center gap-2">
-                        <div class="h-1.5 w-1.5 rounded-full bg-emerald-500"></div>
-                        <p class="text-xs font-bold text-emerald-500">Dentro do Prazo ({{ selectedTicket()!.slaHours }}h)</p>
-                      </div>
-                    </div>
-                    <div class="pt-4 border-t border-zinc-900">
-                       <p class="text-[8px] text-zinc-500 font-black uppercase mb-3 text-center">Responsáveis Ativos</p>
-                       <div class="flex justify-center -space-x-3">
-                         <div class="w-8 h-8 rounded-full bg-zinc-800 border-2 border-zinc-950 flex items-center justify-center text-[8px] font-black text-white" title="Lucas CS">LC</div>
-                         <div class="w-8 h-8 rounded-full bg-emerald-600 border-2 border-zinc-950 flex items-center justify-center text-[8px] font-black text-white" title="Carla QA">CQ</div>
-                         <div class="w-8 h-8 rounded-full bg-indigo-600 border-2 border-zinc-950 flex items-center justify-center text-[8px] font-black text-white" title="Orion Dev">OX</div>
-                       </div>
+                      <p class="text-xs font-bold text-emerald-500">Ativo ({{ selectedTicket()!.slaHours }}h)</p>
                     </div>
                   </div>
                 </div>
@@ -186,23 +170,15 @@ import { NexusDrawerComponent } from './nexus-drawer.component';
             </div>
           </div>
         } @else {
-          <div class="h-full flex flex-col items-center justify-center text-center p-8 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-indigo-900/5 via-zinc-950 to-zinc-950">
-            <div class="w-24 h-24 bg-zinc-900 rounded-[2rem] flex items-center justify-center mb-8 border border-zinc-800 shadow-2xl transform rotate-3">
-              <svg class="w-12 h-12 text-zinc-700" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" /></svg>
-            </div>
-            <h3 class="text-2xl font-black text-white uppercase tracking-tighter">Nexus Support Center</h3>
-            <p class="text-xs text-zinc-600 mt-4 max-w-xs uppercase font-bold tracking-[0.2em] leading-relaxed">Aguardando seleção de ticket para iniciar orquestração de suporte.</p>
+          <div class="h-full flex flex-col items-center justify-center text-center p-8">
+            <h3 class="text-2xl font-black text-white uppercase tracking-tighter">Nexus Support</h3>
+            <p class="text-[10px] text-zinc-600 mt-4 max-w-xs font-black uppercase tracking-widest leading-relaxed">Aguardando seleção de ticket.</p>
           </div>
         }
       </div>
     </div>
     
-    <app-nexus-drawer 
-      [isOpen]="isDrawerOpen()" 
-      [type]="'ticket'" 
-      [data]="selectedTicket()" 
-      (close)="closeDrawer()">
-    </app-nexus-drawer>
+    <app-nexus-drawer [isOpen]="isDrawerOpen()" [type]="'ticket'" [data]="selectedTicket()" (close)="isDrawerOpen.set(false)"></app-nexus-drawer>
   `,
   styles: [`
     .custom-scrollbar::-webkit-scrollbar { width: 4px; }
@@ -218,6 +194,10 @@ export class SupportViewComponent {
   isDrawerOpen = signal(false);
   isAnalyzing = signal(false);
 
+  searchTerm = '';
+  statusFilter = 'ALL';
+  priorityFilter = 'ALL';
+
   constructor() {
     effect(async () => {
       const ticket = this.selectedTicket();
@@ -228,59 +208,32 @@ export class SupportViewComponent {
   }
 
   updateStatus(newStatus: TicketStatus) {
-    if (this.selectedTicket()) {
-      this.dataService.updateTicketStatus(this.selectedTicket()!.id, newStatus);
-    }
+    if (this.selectedTicket()) this.dataService.updateTicketStatus(this.selectedTicket()!.id, newStatus);
+  }
+
+  getFilteredTickets(): Ticket[] {
+    return this.dataService.tickets().filter(t => {
+      const matchSearch = t.client.toLowerCase().includes(this.searchTerm.toLowerCase()) || t.title.toLowerCase().includes(this.searchTerm.toLowerCase());
+      const matchStatus = this.statusFilter === 'ALL' || t.status === this.statusFilter;
+      const matchPriority = this.priorityFilter === 'ALL' || t.priority === this.priorityFilter;
+      return matchSearch && matchStatus && matchPriority;
+    });
   }
 
   getSelectedProductBlueprint(): string {
     if (!this.selectedTicket()) return '';
-    const proj = this.dataService.projects().find(p => p.id === this.selectedTicket()!.linkedProjectId);
-    return proj?.blueprint || '';
+    return this.dataService.projects().find(p => p.id === this.selectedTicket()!.linkedProjectId)?.blueprint || '';
+  }
+
+  async generateQASteps() {
+    if (!this.selectedTicket()) return;
+    this.isAnalyzing.set(true);
+    const steps = await this.aiService.chatWithAgent('carla', `Analise este ticket: ${this.selectedTicket()!.description}`, '', this.getSelectedProductBlueprint());
+    this.selectedTicket()!.reproductionSteps = steps;
+    this.isAnalyzing.set(false);
   }
 
   escalate() {
-    if (this.selectedTicket()) {
-      // 1. Escalate to DB
-      this.dataService.escalateTicketToDev(this.selectedTicket()!.id);
-      
-      // 2. Notify Chat - Using Real Carla Mind
-      const messageToOrion = `Ticket ${this.selectedTicket()!.title} validado. Bugs detalhados: ${this.selectedTicket()!.reproductionSteps}. Arrocha no hotfix, Orion!`;
-      this.dataService.sendMessage(messageToOrion, 'Carla QA', false);
-      this.dataService.addXP('m4', 20); // Carla did her job
-
-      // 3. Refresh view
-      setTimeout(() => {
-        const updated = this.dataService.tickets().find(t => t.id === this.selectedTicket()!.id);
-        if (updated) this.selectedTicket.set({ ...updated });
-      }, 500);
-    }
-  }
-  
-  async generateQASteps() {
-    if (this.selectedTicket() && this.aiService.hasKey()) {
-      this.isAnalyzing.set(true);
-      const blueprint = this.getSelectedProductBlueprint();
-      const steps = await this.aiService.chatWithAgent(
-        'carla', 
-        `Analise este ticket: ${this.selectedTicket()!.description}`, 
-        `Ticket ID: ${this.selectedTicket()!.id}. Cliente: ${this.selectedTicket()!.client}`,
-        blueprint
-      );
-      
-      const updatedTicket = { ...this.selectedTicket()!, reproductionSteps: steps };
-      this.selectedTicket.set(updatedTicket);
-      
-      this.isAnalyzing.set(false);
-    }
-  }
-  
-  openDrawer() {
-    if(this.selectedTicket()) this.isDrawerOpen.set(true);
-  }
-  
-  closeDrawer() {
-    this.isDrawerOpen.set(false);
-    this.selectedTicket.set(null);
+    if (this.selectedTicket()) this.dataService.escalateTicketToDev(this.selectedTicket()!.id);
   }
 }
